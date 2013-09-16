@@ -1,0 +1,343 @@
+package edu.ucsf.sdm;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.rosuda.JRI.Rengine;
+
+/**
+ * This class provides wrapper functions for fitting multiple adaptive regression splines with R.
+ * @author jladau
+ */
+public class FitMARS_R {
+
+	//mapCol(sVarShort) = returns the column of the given variable in the predictors matrix in R
+	//sResponseTransform = transform for response variable
+	//ren1 = r engine
+	//map1(iVar) = returns current vector string for given variable
+	
+	private String sResponseTransform;
+	private Map<String,Integer> mapCol;
+	private Rengine ren1;
+	private Map<Integer,StringBuilder> map1;
+	
+	/**
+	 * Constructor
+	 */
+	public FitMARS_R(){
+
+		//initializing r object
+		ren1 = new Rengine (new String [] {"--vanilla"}, false, null);
+		if (ren1.waitForR() == false)
+        {
+            System.out.println("ERROR: Cannot load R");
+            return;
+        }
+		ren1.eval("library(mda)");		
+	}
+	
+	/**
+	 * Appends predictor values.
+	 * @param sPredictorValues Predictor values being appended.  Format is "sVarShort1:sValue1,sVarShort2:sValue2,sVarShort3:sValue3,..."
+	 */
+	public void appendPredictorValues(String sPredictorValues){
+		
+		//rgs1 = current predictor values in split format
+		//rgs2 = current predictor in split format
+		//iCol = column of current variable
+		//sbl1 = current StringBuilder object
+		
+		String rgs1[]; String rgs2[];
+		int iCol;
+		StringBuilder sbl1;
+		
+		//loading predictor values in string format
+		rgs1 = sPredictorValues.split(",");
+		
+		//looping through predictors
+		for(int i=0;i<rgs1.length;i++){
+			
+			//looping current predictor in split format
+			rgs2 = rgs1[i].split(":");
+			
+			//loading current column
+			if(mapCol.containsKey(rgs2[0])){
+				iCol = mapCol.get(rgs2[0]);
+			
+				//updating map
+				if(map1.containsKey(iCol)){
+					sbl1 = map1.get(iCol);
+					sbl1.append("," + rgs2[1]);
+				}else{
+					sbl1 = new StringBuilder();
+					sbl1.append("c(" + rgs2[1]);
+				}
+				map1.put(iCol, sbl1);
+			}
+		}
+	}
+
+	/**
+	 * Clears saved predictor values.
+	 */
+	public void clearPredictorValues(){
+		map1.clear();
+	}
+
+	/**
+	 * Closes attached R object.
+	 */
+	public void closeR(){
+		ren1.end();
+	}
+
+	/**
+	 * Loads data.
+	 * @param rgsData Data.  Columns contain a variables.
+	 * @param rgiPredictors List of columns with the predictors variables.
+	 * @param iResponse Column with response variable.
+	 * @param iIndex Column with the metric.
+	 * @param sIndex Diversity metric to used: either "richness" or "shannon."
+	 * @param sResponseTransform Transform to use or response variable.
+	 */
+	public void fitModel(String rgsData[][], int rgiPredictors[], int iResponse, String sResponseTransform){
+		
+		//sVarShort = short name of predictor
+		//sbl1 = first vector being added to matrix in R
+		//sbl2 = second vector being added to matrix in R
+		//iCol1 = current first column of variable being loaded
+		//iCol2 = current second column of variable being loaded
+		//dResponse = current value of response variable
+		
+		double dResponse;
+		int iCol1; int iCol2;
+		StringBuilder sbl1; StringBuilder sbl2;
+		String sVarShort;
+		
+		//loading response transform
+		this.sResponseTransform = sResponseTransform;
+		
+		//loading map of columns for each predictor
+		mapCol = new HashMap<String,Integer>();
+		for(int j=0;j<rgiPredictors.length;j++){
+			
+			//loading short name of predictor
+			sVarShort = rgsData[0][rgiPredictors[j]].split(":")[0];
+			
+			//updating map
+			mapCol.put(sVarShort, j);
+		}
+		
+		if(rgiPredictors.length>1){
+		
+			//initializing predictor matrix
+			sbl1 = new StringBuilder(); 
+			sbl1.append("c(");
+			sbl2 = new StringBuilder(); 
+			sbl2.append("c(");
+			iCol1=rgiPredictors[0]; iCol2 = rgiPredictors[1];
+			for(int i=1;i<rgsData.length;i++){
+				sbl1.append(rgsData[i][iCol1]);
+				sbl2.append(rgsData[i][iCol2]);
+				if(i<rgsData.length-1){
+					sbl1.append(",");
+					sbl2.append(",");
+				}else{
+					sbl1.append(")");
+					sbl2.append(")");
+				}
+			}
+			ren1.eval("datax=cbind(" + sbl1.toString() + "," + sbl2.toString() + ")");
+			
+			//****************************
+			//String rgsTEMP[][] = new String[9][1];
+			//****************************
+			
+			//*****************************
+			//System.out.println("datax=cbind(" + sbl1.toString() + "," + sbl2.toString() + ")");
+			//rgsTEMP[0][0]="datax=cbind(" + sbl1.toString() + "," + sbl2.toString() + ")";
+			 //*****************************
+			
+			//adding additional vectors
+			for(int k=2;k<rgiPredictors.length;k++){
+				
+				iCol1 = rgiPredictors[k];
+				
+				//building vector
+				sbl1 = new StringBuilder();
+				sbl1.append("c(");
+				for(int i=1;i<rgsData.length;i++){
+					sbl1.append(rgsData[i][iCol1]);
+					if(i<rgsData.length-1){
+						sbl1.append(",");
+					}else{
+						sbl1.append(")");
+					}
+				}
+				
+				//appending to matrix
+				ren1.eval("datax = cbind(datax," + sbl1.toString() + ")");	
+				//***************************
+				//System.out.println("datax = cbind(datax," + sbl1.toString() + ")");
+				//rgsTEMP[k-1][0]="datax = cbind(datax," + sbl1.toString() + ")";
+				//***************************
+				
+			}
+		}else{
+			
+			//creating predictor matrix
+			sbl1 = new StringBuilder(); 
+			sbl1.append("c(");
+			iCol1=rgiPredictors[0];
+			for(int i=1;i<rgsData.length;i++){
+				sbl1.append(rgsData[i][iCol1]);
+				if(i<rgsData.length-1){
+					sbl1.append(",");
+				}else{
+					sbl1.append(")");
+				}
+			}
+			ren1.eval("datax = cbind(" + sbl1.toString() + "," + sbl1.toString() + ")");
+			ren1.eval("datax = datax[,1]");
+		}
+		
+		//************************
+		//FileIO.writeFile(rgsTEMP, "/home/jladau/Desktop/TEMPOUT.txt", "", 0, false);
+		//************************
+		
+		//writing response matrix
+		sbl1 = new StringBuilder();
+		sbl1.append("c(");
+		iCol1 = iResponse;
+		for(int i=1;i<rgsData.length;i++){
+			
+			//loading value of response
+			dResponse = Double.parseDouble(rgsData[i][iCol1]);
+			dResponse = transformResponse(dResponse);
+			
+			//appending to string
+			sbl1.append(dResponse);
+			if(i<rgsData.length-1){
+				sbl1.append(",");
+			}else{
+				sbl1.append(")");
+			}
+		}
+		ren1.eval("datay=" + sbl1.toString());
+		
+		//******************************
+		//System.out.println("datay=" + sbl1.toString());
+		//******************************
+		
+		//initializing predictor maps
+		map1 = new HashMap<Integer,StringBuilder>();
+	
+		//fitting model
+		//****************************
+		ren1.eval("mars1=mars(datax,datay,degree=1,thresh=0.1)");
+		//ren1.eval("library(earth)");
+		//ren1.eval("mars1=earth(datax,datay)");
+		//****************************
+	}
+	
+	public double[] getPredictions(){
+		
+		//rgd1 = output vector
+		
+		double rgd1[];
+		
+		//checking if map any predictions are to be made
+		if(map1.size()==0){
+			rgd1 = new double[]{-9999.};
+			return rgd1;
+		}
+		
+		if(map1.size()>1){
+		
+			ren1.eval("predx=cbind(" + map1.get(0) + ")," + map1.get(1) + "))");
+			
+			//********************************
+			//System.out.println("predx=cbind(" + map1.get(0) + ")," + map1.get(1) + "))");
+			//********************************
+			
+			//loading remainder of predictor matrix
+			for(int i=2;i<map1.size();i++){
+				ren1.eval("predx=cbind(predx," + map1.get(i) + "))");
+				
+				//************************************
+				//System.out.println("predx=cbind(predx," + map1.get(i) + "))");
+				//************************************
+				
+			}
+		}else{
+			
+			ren1.eval("predx=cbind(" + map1.get(0) + ")," + map1.get(0) + "))");
+			ren1.eval("predx=predx[,1]");
+		}
+			
+		//loading predictions
+		rgd1 = ren1.eval("predict(mars1,predx)").asDoubleArray();
+		
+		//transforming
+		//**********************
+		//for(int i=0;i<rgd1.length;i++){
+		//	rgd1[i]=transformInverseResponse(rgd1[i]);
+		//}
+		//**********************
+		
+		//returning result
+		return rgd1;
+	}
+	
+	/**
+	 * Gets current rengine.
+	 * @return Current rengine.
+	 */
+	public Rengine getRengine(){
+		return ren1;
+	}
+	
+	/**
+	 * Transforms response variable using transform in sResponseTransform.
+	 * @param dValue Value to be transformed.
+	 * @return Transformed value.
+	 */
+	private double transformResponse(double dValue){
+		
+		if(sResponseTransform.equals("log")){
+			return Math.log10(dValue);
+		}else if(sResponseTransform.equals("sqrt")){
+			return Math.sqrt(dValue);
+		}else if(sResponseTransform.equals("inverse")){
+			return 1./dValue;
+		}else if(sResponseTransform.equals("identity")){
+			return dValue;
+		}else if(sResponseTransform.equals("asin")){
+			return Math.asin(dValue);
+		}
+		System.out.println("ERROR: FitMARS_R.transformResponse");
+		return -9999.;
+	}
+	
+	/**
+	 * Applies inverse transform using transform in sResponseTransform.
+	 * @param dValue Value to be transformed.
+	 * @return Transformed value.
+	 */
+	private double transformInverseResponse(double dValue){
+		
+		if(sResponseTransform.equals("log")){
+			return Math.exp(dValue);
+		}else if(sResponseTransform.equals("sqrt")){
+			return dValue*dValue;
+		}else if(sResponseTransform.equals("inverse")){
+			return 1./dValue;
+		}else if(sResponseTransform.equals("identity")){
+			return dValue;
+		}else if(sResponseTransform.equals("asin")){
+			return Math.sin(dValue);
+		}
+		System.out.println("ERROR: FitMARS_R.transformInverseResponse");
+		return -9999.;
+	}
+}

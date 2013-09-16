@@ -1,0 +1,99 @@
+package edu.ucsf.sdm;
+import javax.swing.*;
+
+public class Main {
+
+	/** Fits model and outputs alpha-diversity map */
+	
+	public static void main(String rgsArgs[]){
+		
+		//sPath = path to data file
+		//rgiPredictors = list of predictor columns
+		//sModel = model type: "mars" or "glm"
+		//sGLM = current glm call
+		//sPredictorValuesVec = values of constant predictors (in vector format; separated by "-")
+		//sDir = directory with raster data
+		//iResponseCol = response variable column
+		//sTransform = response variable transform to use
+		//sdm1 = SDMAnalysis object
+		//rgs2 = arguments
+		//rgs3 = list of predictor columns in string format
+		//sPathArgs = path to file with the arguments
+		
+		String sPathArgs = null; String sGLM = null; String sModel = null; String sPath = null; String sPredictorValuesVec = null; String sDir = null; String sTransform = null;
+		int rgiPredictors[] = null;
+		int iResponseCol=-9999;
+		SDMAnalysis sdm1;
+		String rgs2[][]; String rgs3[];
+				
+		//loading arguments
+		for(int i=0;i<rgsArgs.length;i++){
+			if(rgsArgs[i].startsWith("--sPathArguments")){
+				sPathArgs=rgsArgs[i].split("=")[1];
+			}
+		}
+		
+		rgs2 = FileIO.readFile(sPathArgs, "="); 
+		for(int i=0;i<rgs2.length;i++){
+			
+			if(rgs2[i][0].equals("raster directory")){
+				//loading raster directory
+				sDir = rgs2[i][1];
+			}else if(rgs2[i][0].equals("data file")){	
+				
+				//loading data path
+				sPath = rgs2[i][1];
+			}else if(rgs2[i][0].equals("model")){	
+				
+				//loading model
+				sModel = rgs2[i][1];
+			}else if(rgs2[i][0].equals("predictors")){	
+				
+				//loading constant predictors
+				sPredictorValuesVec = rgs2[i][1];			
+			}else if(rgs2[i][0].equals("response variable column")){	
+				
+				//loading response variable column
+				iResponseCol = Integer.parseInt(rgs2[i][1]);
+			}else if(rgs2[i][0].equals("predictor columns")){	
+				
+				//loading list of predictors to use
+				if(rgs2[i][1].equals("null")){	
+					rgiPredictors = new int[]{0};
+				}else{
+					rgs3 = rgs2[i][1].split(",");
+					rgiPredictors = new int[rgs3.length];
+					for(int k=0;k<rgs3.length;k++){
+						rgiPredictors[k]=Integer.parseInt(rgs3[k]);
+					}
+				}
+			}else if(rgs2[i][0].equals("model call")){	
+				
+				//loading GLM call
+				sGLM=rgs2[i][1];
+				sGLM=sGLM.replace(":", "=");
+				
+				
+			}else if(rgs2[i][0].equals("response variable transform")){	
+				
+				//loading transform
+				sTransform = rgs2[i][1];
+			}	
+		}
+		
+		//initializing SDMAnalysis object
+		sdm1 = new SDMAnalysis(sModel, sDir, sPath, sTransform, iResponseCol, rgiPredictors, sGLM);
+		
+		//running cross validation
+		sdm1.runCrossValidation();
+		
+		//looping through predictor values and outputting maps
+		sdm1.printMap(sPredictorValuesVec.split("-"));
+		
+		//closing objects
+		sdm1.closeSDMAnalysis();
+				
+		//terminating
+		JOptionPane.showMessageDialog(null, "Done");
+	}
+}

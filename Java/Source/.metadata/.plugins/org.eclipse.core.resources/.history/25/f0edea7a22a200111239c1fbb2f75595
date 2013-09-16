@@ -1,0 +1,119 @@
+package edu.ucsf.sdm;
+
+import java.util.ArrayList;
+
+import javax.swing.JOptionPane;
+
+/**
+ * This code merges two maps according to the values stored in a third map.  So, the output map will contain values from the first map if a specified condition in the third map is met, and values from the second map otherwise.
+ * @author jladau
+ *
+ */
+public class Main{
+
+	public static void main(String[] rgsArgs){
+		
+		//sPathMap1 = path to first map
+		//sPathMap2 = path to second map
+		//sPathMapTest = path to map with data for deciding which map to use
+		//dElevation = depth to consider
+		//rgdMap1 = current grid from first map
+		//rgdMap2 = current grid from second map
+		//rgdMapTest = current grid from last map
+		//rgdMapOut = current output map
+		//cdf1 = cdf object for first map
+		//cdf2 = cdf object for second map
+		//cdfTest = cdf object for test map
+		//cdfWriter = cdf object for writing output
+		//lstElevations = list of elevations
+		//lstTimes = list of times
+		
+		ArrayList<Double> lstElevations; ArrayList<Double> lstTimes;
+		String sPathMap1; String sPathMap2; String sPathMapTest;
+		double dElevation;
+		double rgdMap1[][]; double rgdMap2[][]; double rgdMapTest[][]; double rgdMapOut[][];
+		NetCDF_IO cdf1; NetCDF_IO cdf2; NetCDF_IO cdfTest; NetCDF_IO cdfWriter;
+		
+		//loading paths
+		sPathMap1 = FileIO.getPath("Enter the path to the first map (values from this map will be used if test condition is false):", "");
+		sPathMap2 = FileIO.getPath("Enter the Path to the second map (values from this map will be used if test condition is true):", "");
+		sPathMapTest = FileIO.getPath("Enter the path to the map with the data to be used as a criterion for merging:", "");
+		
+		//initializing cdf objects
+		cdf1 = new NetCDF_IO(sPathMap1,"reading");
+		cdf2 = new NetCDF_IO(sPathMap2,"reading");
+		cdfTest = new NetCDF_IO(sPathMapTest,"reading");
+		
+		//loading list of elevations and times
+		lstElevations = new ArrayList<Double>();
+		lstTimes = new ArrayList<Double>();
+		lstElevations.add(0.);
+		for(int k=1;k<=12;k++){
+			lstTimes.add((double) k);
+		}
+		
+		//initializing writer
+		cdfWriter = new NetCDF_IO(System.getProperty("user.home") + "/AlphaDiversityGLM_Merged.nc","writing");
+		cdfWriter.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, "Richness", "Number_of_Taxa");
+		
+		//loading depth
+		dElevation = 0;
+		
+		//looping through times
+		for(int k=1;k<=12;k++){
+			
+			//loading maps
+			rgdMap1 = cdf1.readGrid(0.5,dElevation,(double) k);
+			rgdMap2 = cdf2.readGrid(0.5,dElevation,(double) k);
+			rgdMapTest = cdfTest.readGrid(0.5,dElevation,(double) k);
+			
+			//initializing output
+			rgdMapOut = new double[rgdMap1.length][rgdMap1[0].length];
+			
+			//looping through rows and columns
+			for(int i=0;i<rgdMapOut.length;i++){
+				for(int j=0;j<rgdMapOut[0].length;j++){
+					
+					//checking if condition is met
+					if(checkCondition(i,j,rgdMapTest)==false){
+						rgdMapOut[i][j]=rgdMap1[i][j];
+					}else{
+						rgdMapOut[i][j]=rgdMap2[i][j];
+					}
+				}
+			}
+			
+			//saving map
+			cdfWriter.writeGrid(rgdMapOut, dElevation, (double) k);
+		}
+		
+		//closing objects
+		cdf1.closeReader();
+		cdf2.closeReader();
+		cdfTest.closeReader();
+		cdfWriter.closeWriter();
+		
+		//terminating
+		JOptionPane.showMessageDialog(null,"Done.");
+	}
+	
+	/**
+	 * Checks whether condition is met in specified cell of map.
+	 * @param iRow Row for lookup.
+	 * @param iCol Column for lookup.
+	 * @param rgdMap Map for lookup.
+	 * @return True if condition is met; false otherwise.
+	 */
+	private static boolean checkCondition(int iRow, int iCol, double[][] rgdMap){
+		
+		//condition is stated here: modify to suit needs
+		if(rgdMap[iRow][iCol]>0){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	
+	
+}

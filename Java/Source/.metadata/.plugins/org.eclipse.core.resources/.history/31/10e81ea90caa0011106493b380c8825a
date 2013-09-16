@@ -1,0 +1,28 @@
+package edu.ucsf.sdm;
+
+/**
+ * Thsi code generates a raster of point locations that can be displayed using panoply or another NetCDF viewer.
+ * @author jladau
+ */
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		//rgsPoints = list of points (latitude, longitude, optional value)
+		//sPath = path to file with points
+		
+		String sPath;
+		String rgsPoints[][];
+		
+		//loading file with points
+		sPath = FileIO.getPath("Enter the file containing the points (latitude, longitude, value) to map:", "");
+		rgsPoints = FileIO.readFile(sPath, ",");
+		
+		
+		
+		
+		
+	}
+	
+	
+}

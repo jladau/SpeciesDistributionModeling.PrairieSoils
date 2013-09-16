@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/CompileObservationsIndividualTaxon/src/edu/ucsf/sdm/Main.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ucsf.sdm.Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="--iRareIterations=1&#10;--iTotalReads=940&#10;--sPathMetadata=&quot;/home/jladau/Desktop/Prairie Soil Project/Data/Metadata/Metadata_RasterValues.csv&quot;&#10;--sPathFilters=&quot;/home/jladau/Desktop/Prairie Soil Project/Data/Filters/Filters.txt&quot;&#10;--sPathSamples=&quot;/home/jladau/Desktop/Prairie Soil Project/Data/Samples Files/Samples.csv&quot;&#10;--sTaxonInclude=Verrucomicrobia"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="CompileObservationsIndividualTaxon"/>
+</launchConfiguration>

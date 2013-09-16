@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/ValidateDiversityEstimator2/src/edu/ucsf/ranges/Main.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ucsf.ranges.Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="--dRadius=0&#10;--sPathSmoothedRanges=/home/jladau/Documents/Research/Data/Smoothed IUCN Ranges/Caudata_50.0_SMOOTH.csv&#10;--sPathLandRaster=/home/jladau/Documents/Research/Data/Global Topography Raster/globaltopography.nc&#10;--sMode=alpha-diversity&#10;--sLand=both&#10;--iValidationIterations=1000&#10;--iCensusLocations=20&#10;--iRandomRanges=100&#10;--dLatMin=30 --dLatMax=50 --dLonMin=-120 --dLonMax=-80&#10;//--dLatMin=-15 //--dLatMax=0 //--dLonMin=-65 //--dLonMax=-50"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="ValidateDiversityEstimator2"/>
+</launchConfiguration>

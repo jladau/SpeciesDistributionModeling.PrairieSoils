@@ -1,0 +1,255 @@
+package edu.ucsf.sdm;
+
+import java.util.ArrayList;
+
+/**
+ * Runs SDM analysis with given inputs.
+ * @author jladau
+ */
+public class SDMAnalysis {
+
+	//mar1 = mars object
+	//lm1 = lm object
+	//glm1 = glm object
+	//rgsData = data file
+	//rgiPredictors = list of predictor columns
+	//iResponseCol = column with response variable
+	//sLink = link function
+	//sLM = lm call
+	//sFile = input file name
+	//sDir = directory with rasters
+	
+	private FitMARS_R mar1 = null; 
+	private FitLM_R lm1 = null;
+	private FitGLM_R glm1 = null;
+	private String rgsData[][];
+	private int rgiPredictors[];
+	private int iResponseCol;
+	private String sLink;
+	private String sLM;
+	private String sFile;
+	private String sDir;
+	
+	/**
+	 * Constructor
+	 * @param sModel Model: "lm" or "mars."
+	 * @param sDir Directory with rasters.
+	 * @param sPath Path to data file.
+	 * @param sTransform Transform for response variable.
+	 * @param iResponseCol Response variable column.
+	 * @param rgiPredictors List of predictor columns (for mars model only).
+	 * @param sLM Glm call (for lm model only)
+	 */
+	public SDMAnalysis(String sModel, String sDir, String sPath, String sLink, int iResponseCol, int rgiPredictors[], String sLM){
+		
+		//loading fields
+		this.rgiPredictors = rgiPredictors;
+		this.iResponseCol = iResponseCol;
+		this.sLink = sLink;
+		this.sLM = sLM;
+		this.sDir = sDir;
+		
+		//loading file name
+		sFile = FileIO.getFileName(sPath);
+		
+		//loading data and updating headers
+		rgsData = FileIO.readFile(sPath, ",");
+		for(int j=0;j<rgsData[0].length;j++){
+			if(rgsData[0][j].endsWith("Raster")){
+				rgsData[0][j]=rgsData[0][j].replace("Raster", "");
+			}
+		}
+		
+		//initializing AssembleFirstApha object
+		if(sModel.equals("mars")){
+
+			//loading mars model
+			mar1 = new FitMARS_R();
+		}else if(sModel.equals("lm")){
+			
+			//loading lm model
+			lm1 = new FitLM_R();			
+		}else if(sModel.equals("glm")){
+			
+			//loading lm model
+			glm1 = new FitGLM_R();			
+		}
+	}
+	
+	/**
+	 * Runs cross validation and outputs result
+	 */
+	public void runCrossValidation(){
+		
+		//crs1 = cross-validation object
+
+		CrossValidateModel crs1;
+		
+		if(mar1!=null){
+			
+			//running cross validation for mars richness model
+			crs1 = new CrossValidateModel(mar1, rgsData, rgiPredictors, iResponseCol, sTransform);
+			FileIO.writeFile(crs1.getPredictions(), System.getProperty("user.home") + "/AlphaDiversityMARS_CrossValidation.csv", ",", 0, false);	
+		}else if(lm1!=null){
+			
+			//running cross validation for lm richness model
+			crs1 = new CrossValidateModel(lm1, rgsData, iResponseCol, sTransform, sLM);
+			FileIO.writeFile(crs1.getPredictions(), System.getProperty("user.home") + "/AlphaDiversityLM_CrossValidation.csv", ",", 0, false);
+		}else if(glm1!=null){
+			
+			//running cross validation for glm richness model
+			crs1 = new CrossValidateModel(glm1, rgsData, iResponseCol, sTransform, sLM);
+			FileIO.writeFile(crs1.getPredictions(), System.getProperty("user.home") + "/AlphaDiversityGLM_CrossValidation.csv", ",", 0, false);
+		}
+	}
+	
+	/**
+	 * Prints map with given predictor values
+	 * @param rgsPredValues Predictor values
+	 */
+	public void printMap(String[] rgsPredValues){
+		
+		//drm1 = current DrawMap object
+		//cdfWriter = output cdf
+		//cdfWriterStError = standard error cdf writer
+		//lstElevations = list of elevations
+		//lstTimes = list of times
+		//rgs1 = current predictor values in split format
+		//dElevation = current elevation
+		//dTime = current time
+		//rgsLat = cumulative latitudinal diversity gradient output
+		//rgdLat = current latitudinal diversity gradient output
+		
+		NetCDF_IO cdfWriter = null; NetCDF_IO cdfWriterStError;
+		ArrayList<Double> lstElevations; ArrayList<Double> lstTimes;
+		DrawMap drm1;
+		String rgs1[]; String rgsLat[][] = null;
+		double dElevation = 0; double dTime = 0;
+		double rgdLat[][];
+		
+		//loading list of elevations and times
+		lstElevations = new ArrayList<Double>();
+		lstTimes = new ArrayList<Double>();
+		for(int i=0;i<rgsPredValues.length;i++){
+			rgs1 = rgsPredValues[i].split(";")[1].split(",");
+			for(int j=0;j<rgs1.length;j++){
+				if(rgs1[j].startsWith("vert")){
+					dElevation = Double.parseDouble(rgs1[j].split(":")[1]);
+					if(!lstElevations.contains(dElevation)){
+						lstElevations.add(dElevation);
+					}
+				}else if(rgs1[j].startsWith("time")){
+					dTime = Double.parseDouble(rgs1[j].split(":")[1]);
+					if(!lstTimes.contains(dTime)){
+						lstTimes.add(dTime);
+					}
+				}
+			}
+		}
+		
+		if(mar1!=null){
+			
+			//fitting model for richness
+			mar1.fitModel(rgsData, rgiPredictors, iResponseCol, sTransform);
+			
+			//initializing writer
+			cdfWriter = new NetCDF_IO(System.getProperty("user.home") + "/AlphaDiversityMARS.nc","writing");
+			cdfWriter.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, "Richness", "Number_of_Taxa");
+			
+			//outputting richness map
+			for(int i=0;i<rgsPredValues.length;i++){
+				drm1 = new DrawMap(mar1, sDir, rgsData, sFile, rgsPredValues[i]);
+				rgs1 = rgsPredValues[i].split(";")[1].split(",");
+				for(int j=0;j<rgs1.length;j++){
+					if(rgs1[j].startsWith("vert")){
+						dElevation = Double.parseDouble(rgs1[j].split(":")[1]);
+					}else if(rgs1[j].startsWith("time")){
+						dTime = Double.parseDouble(rgs1[j].split(":")[1]);
+					}
+				}
+				cdfWriter.writeGrid(drm1.getMap(), dElevation, dTime);
+			}
+			
+		}else if(lm1!=null){
+			
+			//fitting richness model
+			lm1.fitModel(rgsData, sLM);
+			
+			//initializing writers
+			cdfWriter = new NetCDF_IO(System.getProperty("user.home") + "/AlphaDiversityLM.nc","writing");
+			cdfWriter.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, "Richness", "Number_of_Taxa");
+			cdfWriterStError = new NetCDF_IO(System.getProperty("user.home") + "/SterrorAlphaDiversityLM.nc","writing");
+			cdfWriterStError.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, "StErrorTransformedRichness", "Transformed_Number_of_Taxa");
+			
+			//outputting richness map
+			for(int i=0;i<rgsPredValues.length;i++){
+				drm1 = new DrawMap(lm1, sDir, rgsData, sFile, sTransform, rgsPredValues[i]);
+				rgs1 = rgsPredValues[i].split(";")[1].split(",");
+				for(int j=0;j<rgs1.length;j++){
+					if(rgs1[j].startsWith("vert")){
+						dElevation = Double.parseDouble(rgs1[j].split(":")[1]);
+					}else if(rgs1[j].startsWith("time")){
+						dTime = Double.parseDouble(rgs1[j].split(":")[1]);
+					}
+				}
+				cdfWriter.writeGrid(drm1.getMap(), dElevation, dTime);
+				cdfWriterStError.writeGrid(drm1.getStErrorMap(), dElevation, dTime);
+				
+				//updating latitudinal diversity gradient output
+				rgdLat = drm1.getLatitudinalDiversity();
+				if(i==0){
+					rgsLat = new String[rgdLat.length+1][1];
+					rgsLat[0][0]="LATITUDE";
+					for(int k=1;k<rgsLat.length;k++){
+						rgsLat[k][0]= Double.toString(rgdLat[k-1][0]);
+					}
+				}
+				rgsLat[0][0]+=",PREDICTION_" + dTime + "_" + dElevation + ",95CILB,95CIUB";
+				for(int k=1;k<rgsLat.length;k++){
+					rgsLat[k][0]+= "," + Double.toString(rgdLat[k-1][1]) + "," + Double.toString(rgdLat[k-1][2]) + "," + Double.toString(rgdLat[k-1][3]);
+				}
+			}
+			
+			//printing result
+			FileIO.writeFile(rgsLat, System.getProperty("user.home") + "/LatitudinalDiversityLM.csv", ",", 0, false);
+		
+		}else if(glm1!=null){
+			
+			//fitting richness model
+			glm1.fitModel(rgsData, sLM);
+			
+			//initializing writers
+			cdfWriter = new NetCDF_IO(System.getProperty("user.home") + "/AlphaDiversityGLM.nc","writing");
+			cdfWriter.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, "Richness", "Number_of_Taxa");
+			
+			//outputting richness map
+			for(int i=0;i<rgsPredValues.length;i++){
+				drm1 = new DrawMap(glm1, sDir, rgsData, sFile, sTransform, rgsPredValues[i]);
+				rgs1 = rgsPredValues[i].split(";")[1].split(",");
+				for(int j=0;j<rgs1.length;j++){
+					if(rgs1[j].startsWith("vert")){
+						dElevation = Double.parseDouble(rgs1[j].split(":")[1]);
+					}else if(rgs1[j].startsWith("time")){
+						dTime = Double.parseDouble(rgs1[j].split(":")[1]);
+					}
+				}
+				cdfWriter.writeGrid(drm1.getMap(), dElevation, dTime);
+			}
+		}
+		
+		//closing writer
+		cdfWriter.closeWriter();	
+	}
+	
+	/**
+	 * Closes associated R objects.
+	 */
+	public void closeSDMAnalysis(){
+		
+		if(mar1!=null){
+			mar1.closeR();
+		}else{
+			lm1.closeR();
+		}
+	}
+}

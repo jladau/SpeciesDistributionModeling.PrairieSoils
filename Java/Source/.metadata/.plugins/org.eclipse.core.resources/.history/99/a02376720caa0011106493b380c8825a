@@ -1,0 +1,18 @@
+package edu.ucsf.sdm;
+
+/**
+ * Thsi code generates a raster of point locations that can be displayed using panoply or another NetCDF viewer.
+ * @author jladau
+ */
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		
+		
+		
+		
+	}
+	
+	
+}

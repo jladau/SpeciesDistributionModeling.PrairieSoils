@@ -1,0 +1,78 @@
+package edu.ucsf.sdm;
+
+import javax.swing.JOptionPane;
+
+/**
+ * Thsi code generates a raster of point locations that can be displayed using panoply or another NetCDF viewer.
+ * @author jladau
+ */
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		//rgsPoints = list of points (latitude, longitude, optional value)
+		//rgdPoints = list of points in double format
+		//sPath = path to file with points
+		//dRadius = radius of points (in kilometers)
+		//rgd1 = output
+		//sph1 = Spherical Geometry object
+		//dLat = current latitude
+		//dLng = current longitude
+		
+		SphericalGeometry sph1;
+		double rgd1[][]; double rgdPoints[][];
+		String sPath;
+		String rgsPoints[][];
+		double dRadius; double dLat; double dLng;
+		
+		//loading string matrix with points
+		sPath = FileIO.getPath("Enter the file containing the points (latitude, longitude, value) to map:", "");
+		rgsPoints = FileIO.readFile(sPath, ",");
+		
+		//converting string matrix to double format
+		rgdPoints = new double[rgsPoints.length-1][rgsPoints[0].length];
+		for(int i=1;i<rgsPoints.length;i++){
+			for(int j=0;j<3;j++){
+				rgdPoints[i-1][j]=Double.parseDouble(rgsPoints[i][j]);
+			}
+		}
+		
+		//loading radius of points for map
+		dRadius = 250.;
+		
+		//initializing output
+		rgd1 = new double[360][720];
+		
+		//initializing spherical geomtery object
+		sph1 = new SphericalGeometry();
+		
+		//looping through grid cells
+		dLat = 90.25;
+		for(int i=0;i<360;i++){
+			dLat-=0.5;
+			dLng = -180.25;
+			for(int j=0;j<720;j++){
+				dLng+=0.5;
+				
+				//initializing value of cell
+				rgd1[i][j]=-9999;
+				
+				//looping through points -- checking if any are within radius
+				for(int k=0;k<rgdPoints.length;k++){
+					if(sph1.findDistance(rgdPoints[k][0], rgdPoints[k][1], dLat, dLng)<=dRadius){
+						rgd1[i][j]=rgdPoints[k][2];
+						break;
+					}
+				}
+			}
+		}
+		
+		//saving output
+		NetCDF_IO.writeNetCDF(rgd1, "Point", "", System.getProperty("user.home") + "/"  + FileIO.getFileName(sPath).replace(".csv", ".nc"));
+		
+		//terminating
+		JOptionPane.showMessageDialog(null, "Done");
+	}
+	
+	
+}

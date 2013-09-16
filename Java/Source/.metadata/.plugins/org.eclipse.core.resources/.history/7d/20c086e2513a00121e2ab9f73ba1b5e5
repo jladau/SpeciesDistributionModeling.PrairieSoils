@@ -1,0 +1,11 @@
+package edu.ucsf.sdm;
+
+/**
+ * This code merges files created by running SelectModelFast on the cluster
+ * @author jladau
+ */
+
+
+public class Main {
+
+}

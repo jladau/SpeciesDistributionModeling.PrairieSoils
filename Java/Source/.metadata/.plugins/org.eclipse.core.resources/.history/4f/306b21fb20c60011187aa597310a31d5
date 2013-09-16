@@ -1,0 +1,80 @@
+package edu.ucsf.sdm;
+
+import javax.swing.JOptionPane;
+
+/**
+ * This code runs model selection, interfacing with R.
+ * @author jladau
+ */
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		//rgsVars = candidate variables
+		//sResponse = response variable
+		//rgsData = data file
+		//sPathArgs = path to file with the arguments
+		//rgs2 = arguments
+		//iMaxVars = maximum number of variables to consider
+		//slm1 = SelectModel object
+		//rgsOut = output
+		//iRow = output row
+		
+		String rgsVars[] = null; String rgs2[][]; String rgsData[][] = null; String rgsOut[][];
+		String sPathArgs = null; String sResponse = null; 
+		int iMaxVars = 0; int iRow;
+		SelectModel slm1;
+		
+		//loading arguments
+		for(int i=0;i<rgsArgs.length;i++){
+			if(rgsArgs[i].startsWith("--sPathArguments")){
+				sPathArgs=rgsArgs[i].split("=")[1];
+			}
+		}
+		rgs2 = FileIO.readFile(sPathArgs, "="); 
+		for(int i=0;i<rgs2.length;i++){
+			
+			//loading candidate covariates
+			if(rgs2[i][0].equals("candidate covariates")){
+				rgsVars = rgs2[i][1].split(",");
+				
+			//loading response variable
+			}else if(rgs2[i][0].equals("response variable")){
+				sResponse = rgs2[i][1];
+			
+			//loading maximum number of variables
+			}else if(rgs2[i][0].equals("maximum number of covariates")){
+				iMaxVars = Integer.parseInt(rgs2[i][1]);
+			
+			//loading path to data file
+			}else if(rgs2[i][0].equals("data file")){
+				rgsData = FileIO.readFile(rgs2[i][1], ",");	
+			}
+		}
+		
+		//updating headers in data file
+		for(int j=0;j<rgsData[0].length;j++){
+			if(rgsData[0][j].endsWith("Raster")){
+				rgsData[0][j]=rgsData[0][j].replace("Raster", "");
+			}
+		}
+		
+		//initializing SelectModel object
+		slm1 = new SelectModel(rgsData, iMaxVars, sResponse, rgsVars);
+		
+		//outputting results
+		rgsOut = new String[2*(iMaxVars+1)+1][1];
+		rgsOut[0][0] = "MODEL,PRESS,BIC,AIC,STATISTIC_MINIMIZED";
+		iRow=0;
+		for(int i=0;i<=iMaxVars;i++){
+			iRow++;
+			rgsOut[iRow][0]=slm1.getBestModelPRESS(i) + "," + slm1.getPRESS(i) + "," + slm1.getBIC(i) + "," + slm1.getAIC(i) + ",PRESS";
+			iRow++;
+			rgsOut[iRow][0]=slm1.getBestModelBIC(i) + "," + slm1.getPRESS(i) + "," + slm1.getBIC(i) + "," + slm1.getAIC(i) + ",AIC/BIC";
+		}
+		
+		//terminating
+		FileIO.writeFile(rgsOut, System.getProperty("user.home") + "/SelectModel_Output.csv", "", 0, false);
+		JOptionPane.showMessageDialog(null, "Done.");
+	}
+}
