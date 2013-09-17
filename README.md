@@ -10,7 +10,7 @@ Maven 1.0 ( if you want to compile from source)
 To run this code, call the shell script 'Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh' :
 
 ```
-bash '/user/home/downloads/PrairieSpeciesDistributionModeling/Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh'
+bash '<path to download>/PrairieSpeciesDistributionModeling/Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh'
 ```
 
 The output will be written to the 'Output' directory.   The 'Output' directory should be empty prior to running the script to avoid naming conflicts.
