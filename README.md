@@ -3,13 +3,14 @@ SpeciesDistributionModeling.PrairieSoils
 
 Code and data for running niche modeling of tallgrass prairie microbiome.
 
-##Dependencies: 
+###Dependencies: 
 Java runtime environment 1.6 or later.
 Maven 1.0 ( if you want to compile from source)
 
 To run this code, call the shell script 'Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh' :
 
-```bash '/user/home/downloads/PrairieSpeciesDistributionModeling/Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh'
+```
+bash '/user/home/downloads/PrairieSpeciesDistributionModeling/Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh'
 ```
 
 The output will be written to the 'Output' directory.   The 'Output' directory should be empty prior to running the script to avoid naming conflicts.
