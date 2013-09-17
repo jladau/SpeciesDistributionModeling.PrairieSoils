@@ -5,8 +5,16 @@ Code and data for running niche modeling of tallgrass prairie microbiome.
 
 ###Dependencies: 
 Java runtime environment 1.6 or later.
-Maven 1.0 ( if you want to compile from source)
+Maven 1.0 ( if you want to compile from source )
+git ( to download from github )
 
+###Installation
+```
+cd <root directory for download>
+git clone git@github.com:jladau/SpeciesDistributionModeling.PrairieSoils.git
+```
+
+###Usage
 To run this code, call the shell script 'Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh' :
 
 ```
