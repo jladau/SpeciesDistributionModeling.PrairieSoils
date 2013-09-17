@@ -14,6 +14,13 @@ cd <root directory for download>
 git clone git@github.com:jladau/SpeciesDistributionModeling.PrairieSoils.git
 ```
 
+###Compiling from source
+This package comes with precompiled binaries that can be used for the analysis, however if you would prefer to compile from source with Maven:
+```
+cd <Project Root>/Java
+mvn install
+``` 
+
 ###Usage
 To run this code, call the shell script 'Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh' :
 
@@ -21,17 +28,21 @@ To run this code, call the shell script 'Bash/SpeciesDistributionModeling.PRAIRI
 <path to download>/PrairieSpeciesDistributionModeling/Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh
 ```
 
+###Description
 The output will be written to the 'Output' directory.   The 'Output' directory should be empty prior to running the script to avoid naming conflicts.
 
-The computationally expensive step in the analysis is running the all-subsets model selection, which occurs when 'Java/Binaries/SelectModel.jar' is called.  The computational expense of this step increases with the number of candidate predictors being considered and the maximum allowed model size.  Thus, to run the full analysis described in the paper, it is necessary to parallelize this step.  However, the bash script included here is designed to run in a single thread: it only considers models with 4 or fewer predictors and 5 candidate rasters of environmental conditions.   If you are interested in running the full analysis presented in the paper, please contact the authors for a complete set of rasters of environmental conditions and tips on paralellizing the bash script.  Otherwise, the code and compiled binaries presented here are identical to those used for the full analysis in the paper.
+The computationally expensive step in the analysis is running the all-subsets model selection, which occurs when 'edu.ucsf.sdm.SelectModelMain' is called.  The computational expense of this step increases with the number of candidate predictors being considered and the maximum allowed model size.  Thus, to run the full analysis described in the paper, it is necessary to parallelize this step.  However, the bash script included here is designed to run in a single thread: it only considers models with 4 or fewer predictors and 5 candidate rasters of environmental conditions.   If you are interested in running the full analysis presented in the paper, please contact the authors for a complete set of rasters of environmental conditions and tips on paralellizing the bash script.  Otherwise, the code and compiled binaries presented here are identical to those used for the full analysis in the paper.
 
+###Files
 A description of the files is as follows:
 
 'Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh': Bash script for running the analysis.
 
-'Java/Binaries':  Compiled Java jar files for running doing the computational parts of the analysis.  These jar files are called by the aforementioned bash script.
+'Java/pom.xml': Maven build instructions for the project.
 
-'Java/External_Libraries': Contains third party libraries necessary for the analysis.
+'Java/target':  Compiled Java jar file for running doing the computational parts of the analysis. This jar files are called by the aforementioned bash script. 
+
+'Java/target/classes':  Compiled class file for each source file in the project.
 
 'Java/src': Contains Java source files.
 
