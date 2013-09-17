@@ -1,0 +1,598 @@
+package edu.ucsf.sdm;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.rosuda.JRI.Rengine;
+
+/**
+ * This class provides wrapper functions for fitting lm with R
+ * @author jladau
+ */
+public class FitLM_R {
+
+	//ren1 = r engine
+	//mapVarType(sShortName) = returns the variable type for the given variable
+	//mapPredictors(sVarShort) = returns current predictor values (for prediction)
+	//rgdPredictions = array of current predictions
+	//rgdStErrors = array of standard errors of predictions
+	//rgdStErrors = array of confidence intervals of predictions
+	//rgdCI = confidence interval for the mean of the current predictions
+	
+	private Map<String,ArrayList<String>> mapPredictors;
+	private Rengine ren1;
+	private Map<String,String> mapVarType;
+	private double rgdPredictions[];
+	private double rgdStErrors[];
+	private double rgdCI[];
+	
+	/**
+	 * Constructor
+	 */
+	public FitLM_R(){
+		
+		//initializing r object
+		ren1 = new Rengine (new String [] {"--vanilla"}, false, null);
+		if (ren1.waitForR() == false)
+        {
+            System.out.println("ERROR: FitLM_R.constructor");
+            return;
+        }
+		ren1.eval("library(MPV)");
+		
+		//*************************
+		//System.out.println("library(MPV)");
+		//*************************
+		
+		
+	}
+	
+	/**
+	 * Appends given predictor values to predictor values stored in mapPredictors.
+	 * @param sPredValues Predictor values being appended. Format is sShortName1:Value1,sShortName2:Value2,sShortName3:Value3,...
+	 */
+	public void appendPredictorValues(String sPredictorValues){
+		
+		//rgs1 = predictors string in split format
+		//rgs2 = current predictor name and value
+		//sVarShort = current predictor
+		//lst1 = current list of observations
+		
+		ArrayList<String> lst1;
+		String rgs1[]; String rgs2[];
+		String sVarShort;
+		
+		//loading rgs1
+		rgs1 = sPredictorValues.split(",");
+		
+		//looping through predictors
+		for(int i=0;i<rgs1.length;i++){
+			
+			//loading array of current short name and value
+			rgs2 = rgs1[i].split(":");
+		
+			//loading current short variable name
+			sVarShort = rgs2[0];
+			
+			//updating mapPredictors
+			if(mapPredictors.containsKey(sVarShort)){
+				
+				//loading current list
+				lst1 = mapPredictors.get(sVarShort);
+				
+				//updating list
+				lst1.add(rgs2[1]);	
+				mapPredictors.put(sVarShort,lst1);
+			}else{
+				lst1 = new ArrayList<String>(185000);
+				
+				//updating list
+				lst1.add(rgs2[1]);
+				mapPredictors.put(sVarShort,lst1);
+			}
+		}
+	}
+
+	/**
+	 * Clears predictor values.
+	 */
+	public void clearPredictorValues(){
+		mapPredictors.clear();
+	}
+	
+	/**
+	 * Closes attached R objects.
+	 */
+	public void closeR(){
+		ren1.end();
+	}
+	
+	/**
+	 * Finds goodness of fit for current model.
+	 * @return P-value for goodness of fit. 
+	 */
+	public double findGoodnessOfFit(){
+		
+		//d1 = output
+		
+		double d1;
+		
+		try{
+			
+			//checking goodness of fit
+			d1 = ren1.eval("1-pchisq(lm1$deviance, lm1$df.residual)").asDouble();
+		}catch(Exception e){
+		
+			//error
+			d1 = -9999;
+		}
+		
+		//returning result
+		return d1;
+	}
+
+	/**
+	 * Loads data into vectors for fitting using lm and fits lm.
+	 * @param rgsData Data matrix. Columns represent predictors or the response variable.  Rows represent different observations.  First row is a header row. Header string should be of the following format ShortName:LongName:VariableType.  The VariableType is either "continuous" or "categorical."
+	 * @param sLM LM call
+	 */
+	public void fitModel(String rgsData[][], String sLM){
+		
+		//sbl1 = string builder object for current vector being loaded
+		
+		StringBuilder sbl1;
+		
+		//rgs1 = current header string in split format
+		
+		String rgs1[];
+		
+		//formatting headers and loading variable type map
+		mapVarType = new HashMap<String,String>();
+		for(int j=0;j<rgsData[0].length;j++){
+			
+			//splitting header
+			rgs1 = rgsData[0][j].split(":");
+			
+			//loading variable type
+			if(rgs1.length==2){	
+				mapVarType.put(rgs1[0], rgs1[1]);
+			}else{
+				mapVarType.put(rgs1[0], "continuous");
+			}
+				
+			//updating header
+			rgsData[0][j]=rgs1[0];
+		}
+		
+		//looping through variables
+		for(int j=0;j<rgsData[0].length;j++){
+			
+			//checking if variable should be loaded
+			if(!sLM.contains(rgsData[0][j])){
+				continue;
+			}
+			
+			//initializing string builder
+			sbl1 = new StringBuilder();
+			sbl1.append(rgsData[0][j] + "=c(" + rgsData[1][j]);
+			
+			//creating string
+			for(int i=2;i<rgsData.length;i++){
+				sbl1.append("," + rgsData[i][j]);
+			}
+			sbl1.append(")");
+			
+			//loading string into r
+			ren1.eval(sbl1.toString());
+			
+			//**********************
+			//System.out.println(sbl1.toString());
+			//**********************
+			
+			//checking if factor
+			if(mapVarType.get(rgsData[0][j]).equals("categorical")){
+				ren1.eval(rgsData[0][j] + "=as.factor(" + rgsData[0][j] + ")");
+				//******************************
+				//System.out.println(rgsData[0][j] + "=as.factor(" + rgsData[0][j] + ")");
+				//******************************
+			}
+		}
+		
+		//clearing lm1
+		ren1.eval("remove(lm1)");
+		
+		//clearing warnings
+		ren1.eval("assign(\"last.warning\", NULL, envir = baseenv())");
+		
+		//running initial lm
+		ren1.eval("lm1=" + sLM);
+		
+		//************************
+		//System.out.println("lm1=" + sLM);
+		//************************
+		
+		
+		//running model selection
+		//******************************
+		//ren1.eval("lm1=step(lm1,direction=c(\"both\"))");
+		//******************************
+		
+		//checking for warnings
+		if(ren1.eval("last.warning").toString().equals("[NULL ]")==false || ren1.eval("lm1$th.warn").toString().equals("[NULL ]")==false){
+				
+			//clearing lm1: algorithm did not converge or other error
+			ren1.eval("remove(lm1)");	
+			
+			//outputting error
+			System.out.println("ERROR: FitLM_R.fitModel");
+		}
+		
+		//initializing prediction frame
+		initializePredFrame(rgsData);
+	}
+	
+	/**
+	 * Fits lm without loading data
+	 * @param sLM LM call
+	 */
+	public void fitModelWithLoadedData(String sLM){
+		
+		//clearing lm1
+		ren1.eval("remove(lm1)");
+		
+		//clearing warnings
+		ren1.eval("assign(\"last.warning\", NULL, envir = baseenv())");
+		
+		//running initial lm
+		ren1.eval("lm1=" + sLM);
+		
+		//**********************
+		//System.out.println("lm1=" + sLM);
+		//**********************
+		
+		
+		//running model selection
+		//******************************
+		//ren1.eval("lm1=step(lm1,direction=c(\"both\"))");
+		//******************************
+		
+		//checking for warnings
+		if(ren1.eval("last.warning").toString().equals("[NULL ]")==false || ren1.eval("lm1$th.warn").toString().equals("[NULL ]")==false){
+				
+			//clearing lm1: algorithm did not converge or other error
+			ren1.eval("remove(lm1)");	
+			
+			//outputting error
+			System.out.println("ERROR: FitLM_R.fitModel");
+		}
+	}
+
+	/**
+	 * Gets estimated coefficients for the current lm model stored in the lm1 variable in R.
+	 * @return Array of coefficients.
+	 */
+	public String[][] getCoefficients(){
+	
+		//rgsOut = output
+		//iRows = number of coefficients estimated
+		//rgs1 = coefficient names
+		//rgd1 = coefficient values
+		//i1 = current output row
+		
+		String rgsOut[][]; String rgs1[];
+		int iRows; int i1;
+		double rgd1[];
+		
+		//checking for error
+		if(ren1.eval("length(coefficients(lm1))")==null){
+			rgsOut=new String[1][1];
+			rgsOut[0][0]="-9999";
+			return rgsOut;
+		}
+		
+		//loading coefficient values
+		rgd1 = ren1.eval("coefficients(lm1)").asDoubleArray();
+		
+		//loading number of rows
+		iRows=0;
+		for(int i=0;i<rgd1.length;i++){
+			if(!Double.toString(rgd1[i]).equals("NaN")){
+				iRows++;
+			}	
+		}
+			
+		//initializing output
+		rgsOut = new String[iRows][2];
+		
+		//loading coefficient names
+		rgs1 = ren1.eval("names(coefficients(lm1))").asStringArray();
+		
+		//outputting results
+		i1=0;
+		for(int i=0;i<rgsOut.length;i++){
+			if(!Double.toString(rgd1[i]).equals("NaN")){
+				rgsOut[i1][0]=rgs1[i];
+				rgsOut[i1][1]=Double.toString(rgd1[i]);
+				i1++;
+			}
+		}
+		
+		//returning result
+		return rgsOut;
+	}
+	
+	/**
+	 * Loads predicted value specified set of predictors; input format is "sVarLong:value1,sVarLong:value2,..."
+	 */
+	public void loadPredictions(String sResponseTransform){
+		
+		//rgs1 = predictors string in split format
+		//sVarShort = current predictor
+		//s1 = current string being sent to R
+		//s2 = current list of variable values
+		//rgd1 = predictors in the order in which they were loaded
+		//rgd2 = current predictor value array, final values is for total of predictor values
+		//dT = percentile from t-distribution for calculating confidence intervals
+		//rgdCov = estimated covariance matrix
+		//rgdGrad = gradient for calculating CI of mean using delta method
+		//i1 = current variable number
+		//rgdVar = estimated variance
+		//dVar = variance estimate
+		
+		String sVarShort; String s1="";
+		double rgd1[][]=null; double rgd2[] = null; double rgdCov[][]; double rgdGrad[]; double rgdVar[][];
+		ArrayList<String> lst1;
+		double dT; double dVar;
+		int i1;
+		
+		//checking for predictors
+		if(mapPredictors.size() == 0){
+			rgdPredictions = new double[1];
+			rgdPredictions[0]=-9999.;
+			rgdStErrors = new double[1];
+			rgdStErrors[0]=-9999.;
+			rgdCI = new double[1];
+			rgdCI[0]=-9999;
+			return;
+		}
+		
+		//initializing counter for predictor row
+		i1=0;
+		
+		//looping through predictors
+		for(String s : mapPredictors.keySet()){
+			
+			//loading current short variable name
+			sVarShort = s;
+			
+			//loading predictor
+			try{
+				
+				//loading list of predictor values
+				lst1 = mapPredictors.get(sVarShort);
+				rgd2 = new double[lst1.size()];
+				if(rgd1==null){
+					rgd1 = new double[mapPredictors.size()][lst1.size()];
+				}
+				for(int i=0;i<lst1.size();i++){
+					rgd2[i]=Double.parseDouble(lst1.get(i));
+					rgd1[i1][i] = rgd2[i];
+				}
+				ren1.assign(sVarShort, rgd2);
+				i1++;
+				
+				//updating command for making data frame
+				if(s1.equals("")){
+					s1="fra1=data.frame(" + sVarShort;
+				}else{
+					s1+=","+sVarShort;
+				}
+			}catch(Exception e){
+			}
+		}
+		
+		//creating data frame
+		s1+=",check.names=FALSE)";
+		ren1.eval(s1);
+		
+		//loading predicted value
+		try{
+			
+			//loading prediction
+			ren1.eval("prd1=predict(lm1,newdata=fra1,se.fit=TRUE)");
+			
+			//checking for warnings
+			if(ren1.eval("last.warning").toString().equals("[NULL ]")==false){	
+				System.out.println("ERROR: AssembleFirst.loadPredictions");
+				rgdPredictions = new double[1];
+				rgdPredictions[0]=-9999.;
+				rgdStErrors = new double[1];
+				rgdStErrors[0]=-9999.;
+				rgdCI = new double[1];
+				rgdCI[0]=-9999;
+			}else{
+					
+				//saving prediction
+				rgdPredictions = ren1.eval("prd1$fit").asDoubleArray();
+				rgdStErrors = ren1.eval("prd1$se.fit").asDoubleArray();
+				
+				//transforming predictions
+				rgdCI = new double[3];
+				
+				for(int i=0;i<rgdPredictions.length;i++){
+					rgdPredictions[i]=transformInverseResponse(rgdPredictions[i], sResponseTransform);
+					rgdCI[0]+=rgdPredictions[i];
+				}
+				rgdCI[0]=rgdCI[0]/((double) rgdPredictions.length);
+				
+				//initiating finding confidence interval for mean
+				dT = ren1.eval("qt(0.975,df=prd1$df)").asDouble();
+				
+				//loading estimated covariance matrix
+				//rgdCov = ren1.eval("summary(lm1)$cov.unscaled").asMatrix();
+				rgdCov = ren1.eval("vcov(lm1)").asMatrix();
+				
+				//loading predictors
+				ren1.eval("ter1=terms(lm1)");
+				ren1.eval("ter2=delete.response(ter1)");
+				ren1.eval("mdl1=model.frame(ter2,fra1,xlev=lm1$xlevels)");
+				ren1.eval("rgdPred=model.matrix(ter2,mdl1,contrasts.arg=lm1$contrasts)");
+				
+				//loading gradient
+				rgdGrad = new double[rgdCov.length];
+				for(int k=1;k<=rgdGrad.length;k++){
+					rgd2 = ren1.eval("rgdPred[," + k + "]").asDoubleArray();
+					if(rgd2!=null){
+						for(int i=0;i<rgdPredictions.length;i++){
+							
+							//for finding CI for sum of exponentiated predictions
+							//rgdGrad[k-1]+=rgd2[i]*rgdPredictions[i];
+							
+							//for finding CI for sum of non-exponentiated predictions
+							rgdGrad[k-1]+=rgd2[i];
+						}
+					}
+				}
+			
+				//estimating variance
+				dVar=0;
+				for(int i=0;i<rgdCov.length;i++){
+					for(int j=0;j<rgdCov.length;j++){
+						dVar+=rgdCov[i][j]*rgdGrad[i]*rgdGrad[j];
+					}
+				}
+				
+				rgdVar = ElementaryMatrixOperations.findMatrixProduct(rgdGrad, rgdCov);
+				rgdVar = ElementaryMatrixOperations.findMatrixProduct(rgdGrad, rgdVar);
+				
+				//outputting confidence interval
+				rgdCI[1] = rgdCI[0] - dT * Math.sqrt(rgdVar[0][0])/((double) rgdPredictions.length);
+				rgdCI[2] = rgdCI[0] + dT * Math.sqrt(rgdVar[0][0])/((double) rgdPredictions.length);
+			}
+		}catch(Error e){
+			rgdPredictions = new double[1];
+			rgdPredictions[0]=-9999.;
+			rgdStErrors = new double[1];
+			rgdStErrors[0]=-9999.;
+			rgdCI = new double[1];
+			rgdCI[0]=-9999;
+		}
+	}
+
+	/**
+	 * Gets confidence intervals for mean of current predictions.
+	 * @return Confidence intervals: first entry with mean, second entry with lower bound, third entry withwith upper bounds.
+	 */
+	public double[] getCI(){
+		return rgdCI;
+	}
+	
+	/**
+	 * Gets PRESS statistic
+	 * @return
+	 */
+	public double getPRESS(){
+		//ren1.eval("x=PRESS(lm1)");
+		//System.out.println(ren1.eval("lm1$call").asString());
+		
+		return ren1.eval("PRESS(lm1)").asDouble();	
+	}
+	
+	/**
+	 * Gets AIC statistic
+	 * @return
+	 */
+	public double getAIC(){
+		//ren1.eval("x=PRESS(lm1)");
+		//System.out.println(ren1.eval("lm1$call").asString());
+		
+		return ren1.eval("extractAIC(lm1)[2]").asDouble();	
+	}
+	
+	/**
+	 * Gets predicted values.
+	 * @return Array of predicted values.
+	 */
+	public double[] getPredictions(){
+		return rgdPredictions;
+	}
+	
+	/**
+	 * Gets standard errors of predicted values.
+	 * @return Array of standard errors of predicted values.
+	 */
+	public double[] getStErrorPredictions(){
+		return rgdStErrors;
+	}
+	
+	/**
+	 * Gets current rengine.
+	 * @return Current rengine.
+	 */
+	public Rengine getRengine(){
+		return ren1;
+	}
+
+	/**
+	 * Initializes data frame for making predictions.
+	 */
+	private void initializePredFrame(String rgsData[][]){
+		
+		//s1 = R data frame string
+		//sVarShort = current predictor
+		
+		String sVarShort; String s1=null;
+		
+		//looping through predictors
+		for(int j=0;j<rgsData[0].length;j++){
+			
+			//loading current short variable name
+			sVarShort = rgsData[0][j];
+			
+			//loading current element of data frame
+			ren1.eval(sVarShort + "=c(1.)");
+			
+			//****************************
+			//System.out.println(sVarShort + "=c(1.)");
+			//****************************
+			
+			//updating command for making data frame
+			if(s1==null){
+				s1="fra1=data.frame(" + sVarShort;
+			}else{
+				s1+=","+sVarShort;
+			}
+		}
+		
+		//creating data frame
+		s1+=",check.names=FALSE,check.rows=FALSE)";
+		ren1.eval(s1);
+		
+		//**********************
+		//System.out.println(s1);
+		//**********************
+		
+		//initializing predictors map
+		mapPredictors = new HashMap<String,ArrayList<String>>();
+	}
+	
+	/**
+	 * Applies inverse transform using transform in sResponseTransform.
+	 * @param dValue Value to be transformed.
+	 * @return Transformed value.
+	 */
+	private double transformInverseResponse(double dValue, String sResponseTransform){
+		
+		if(sResponseTransform.equals("log")){
+			return Math.exp(dValue);
+		}else if(sResponseTransform.equals("sqrt")){
+			return dValue*dValue;
+		}else if(sResponseTransform.equals("inverse")){
+			return 1./dValue;
+		}else if(sResponseTransform.equals("identity")){
+			return dValue;
+		}
+		return -9999.;
+	}	
+}

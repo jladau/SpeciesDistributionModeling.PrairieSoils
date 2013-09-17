@@ -1,0 +1,75 @@
+package edu.ucsf.sdm;
+
+import javax.swing.JOptionPane;
+
+/**
+ * This code runs model selection, interfacing with R.
+ * @author jladau
+ */
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		//rgsVars = candidate variables
+		//sResponse = response variable
+		//rgsData = data file
+		//sPathArgs = path to file with the arguments
+		//rgs2 = arguments
+		//iMaxVars = maximum number of variables to consider
+		//slm1 = SelectModel object
+		//rgsOut = output
+		
+		String rgsVars[] = null; String rgs2[][]; String rgsData[][] = null; String rgsOut[][];
+		String sPathArgs = null; String sResponse = null; 
+		int iMaxVars = 0;
+		SelectModel slm1;
+		
+		//loading arguments
+		for(int i=0;i<rgsArgs.length;i++){
+			if(rgsArgs[i].startsWith("--sPathArguments")){
+				sPathArgs=rgsArgs[i].split("=")[1];
+			}
+		}
+		rgs2 = FileIO.readFile(sPathArgs, "="); 
+		for(int i=0;i<rgs2.length;i++){
+			
+			//loading candidate covariates
+			if(rgs2[i][0].equals("candidate covariates")){
+				rgsVars = rgs2[i][1].split(",");
+				
+			//loading response variable
+			}else if(rgs2[i][0].equals("response variable")){
+				sResponse = rgs2[i][1];
+			
+			//loading maximum number of variables
+			}else if(rgs2[i][0].equals("maximum number of covariates")){
+				iMaxVars = Integer.parseInt(rgs2[i][1]);
+			
+			//loading path to data file
+			}else if(rgs2[i][0].equals("data file")){
+				rgsData = FileIO.readFile(rgs2[i][1], ",");	
+			}
+		}
+		
+		//updating headers in data file
+		for(int j=0;j<rgsData[0].length;j++){
+			if(rgsData[0][j].endsWith("Raster")){
+				rgsData[0][j]=rgsData[0][j].replace("Raster", "");
+			}
+		}
+		
+		//initializing SelectModel object
+		slm1 = new SelectModel(rgsData, iMaxVars, sResponse, rgsVars);
+		
+		//outputting results
+		rgsOut = new String[iMaxVars+2][1];
+		rgsOut[0][0] = "MODEL,PRESS_STATISTIC";
+		for(int i=0;i<=iMaxVars;i++){
+			rgsOut[i+1][0]=slm1.getBestModel(i) + "," + slm1.getPRESS(i);
+		}
+		
+		//terminating
+		FileIO.writeFile(rgsOut, System.getProperty("user.home") + "/SelectModel_Output.csv", "", 0, false);
+		JOptionPane.showMessageDialog(null, "Done.");
+	}
+}

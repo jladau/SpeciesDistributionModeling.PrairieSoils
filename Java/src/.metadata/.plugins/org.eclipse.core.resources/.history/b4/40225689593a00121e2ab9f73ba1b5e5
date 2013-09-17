@@ -1,0 +1,98 @@
+package edu.ucsf.sdm;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JOptionPane;
+
+/**
+ * This code merges files created by running SelectModelFast on the cluster
+ * @author jladau
+ */
+
+
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		//sDir = directory with files to be merged
+		//mapResults(sTaxon) = returns an array with the results for the given taxon
+		//sTaxon = current taxon
+		//rgsFiles = list of files
+		//rgsData = current data array
+		//rgs1 = current data array
+		
+		Map<String,String[][]> mapResults;
+		String rgsFiles[]; String rgsData[][]; String rgs1[][];
+		String sTaxon; String sDir;
+		
+		//loading directory with files
+		sDir = FileIO.getPath("Enter the directory with the files to be merged:", "");
+		if(!sDir.endsWith("/")){
+			sDir = sDir + "/";
+		}
+		
+		//loading list of files
+		rgsFiles = FileIO.getFileList(sDir);
+		
+		//initializing data map
+		mapResults = new HashMap<String,String[][]>();
+		for(int i=0;i<rgsFiles.length;i++){
+			
+			//loading name of current taxon
+			sTaxon = rgsFiles[i].split("_")[2];
+			
+			//loading data
+			rgsData = FileIO.readFile(sDir + rgsFiles[i], ",");
+			
+			//checking if taxon initialized
+			if(!mapResults.containsKey(sTaxon)){
+				
+				//initializing
+				mapResults.put(sTaxon, rgsData);
+			}else{
+				
+				//***********************
+				//if(rgsFiles[i].equals("SelectModel_Output_PcoA1_0.csv")){
+				//	System.out.println("HERE");
+				//}
+				//***********************
+				
+				//updating
+				rgs1 = mapResults.get(sTaxon);
+				for(int k=1;k<rgs1.length;k++){
+					if(Double.parseDouble(rgsData[k][3])!=-9999){	
+						if(Double.parseDouble(rgs1[k][3])==-9999){
+							for(int j=0;j<4;j++){
+								rgs1[k][j]=rgsData[k][j];
+							}
+						}else{
+							if(rgs1[k][2].equals("PRESS")){
+								if(Double.parseDouble(rgsData[k][3])<Double.parseDouble(rgs1[k][3])){
+									for(int j=0;j<4;j++){
+										rgs1[k][j]=rgsData[k][j];
+									}	
+								}
+							}else{
+								if(Double.parseDouble(rgsData[k][3])>Double.parseDouble(rgs1[k][3])){
+									for(int j=0;j<4;j++){
+										rgs1[k][j]=rgsData[k][j];
+									}	
+								}
+							}
+						}
+					}
+				}
+				mapResults.put(sTaxon,rgs1);	
+			}
+		}
+		
+		//outputting results
+		for(String s:mapResults.keySet()){
+			FileIO.writeFile(mapResults.get(s), System.getProperty("user.home") + "/SelectModel_Output_" + s + ".csv", ",", 0, false);
+		}
+		
+		//terminating
+		JOptionPane.showMessageDialog(null, "Done.");
+	}
+}

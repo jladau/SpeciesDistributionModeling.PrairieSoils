@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/AppendRasterValues/src/edu/ucsf/sdm/Main.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ucsf.sdm.Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="//SOIL&#10;//--sPathMetadata=&quot;/home/jladau/Desktop/Prairie Soil Project/Data/Metadata/Metadata.csv&quot;&#10;//--sDirRasters=&quot;/home/jladau/Desktop/Prairie Soil Project/Data/Formatted Rasters/Historically Constant Rasters&quot;&#10;&#10;//MARINE&#10;--sPathMetadata=&quot;/home/jladau/Documents/Research/iSEEM/Marine Niche Modeling Project/Data/Metadata/microbis_metadata.csv&quot;&#10;--sDirRasters=&quot;/home/jladau/Documents/Research/iSEEM/Marine Niche Modeling Project/Data/Rasters/Environmental Predictors/Formatted Rasters - Updated Names&quot;"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="AppendRasterValues"/>
+</launchConfiguration>

@@ -1,0 +1,268 @@
+package edu.ucsf.utilities;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import edu.ucsf.base.*;
+
+/**
+ * This code sorts sorts through a workspace and extracts classes that are used by more than one package
+ * @author jladau
+ */
+public class Main {
+
+	public static void main(String rgsArgs[]){
+
+		//arg1 = arguments object
+		
+		Arguments arg1;
+		
+		//loading arguments
+		arg1 = new Arguments(rgsArgs);
+		
+		//counting occurrences
+		countOccurrences(arg1.getValueString("sDirWorkspace"));
+		
+		//outputting differences
+		compareClassesInDirectories(arg1.getValueString("sDirComparison1"),arg1.getValueString("sDirComparison2"),arg1.getValueString("sDirOutput"));
+		
+		//outputting duplicates
+		outputDuplicates(rgsArgs);
+		
+		//terminating
+		System.out.println("Done.");
+	}
+	
+	/**
+	 * Compares classes in pair of directories.  Outputs a difference file for each pair of classes with the same name.
+	 * @param sDir1 First directory.
+	 * @param sDir2 Second directory.
+	 * @param sDirOutput Output directory
+	 */
+	private static void compareClassesInDirectories(String sDir1, String sDir2, String sDirOutput){
+		
+		//mapFiles1(sClass) = returns path to class for sDir1
+		//mapFiles2(sClass) = returns path to class for sDir2
+		//fio1 = FileIO object
+		//lstFiles = list of files
+		//sClass = current class
+		//sCommand = current command
+		
+		String sClass; String sCommand;
+		Map<String,String> map1; Map<String,String> map2;
+		FileIO fio1;
+		ArrayList<String> lstFiles;
+		
+		//loading FileIO object and list of files for directory 1
+		fio1 = new FileIO();
+		lstFiles = fio1.listAllFiles(sDir1, ".java");
+	
+		//loading map of files for directory 1
+		map1 = new HashMap<String,String>();
+		for(String s:lstFiles){
+			
+			//loading current class
+			sClass = FileIO.getFileName(s);
+			
+			//updating
+			map1.put(sClass, s);
+		}
+		
+		//loading FileIO object and list of files for directory 2
+		fio1 = new FileIO();
+		lstFiles = fio1.listAllFiles(sDir2, ".java");
+	
+		//loading map of files for directory 2
+		map2 = new HashMap<String,String>();
+		for(String s:lstFiles){
+			
+			//loading current class
+			sClass = FileIO.getFileName(s);
+			
+			//updating
+			map2.put(sClass, s);
+		}
+		
+		//looping through classes and outputting difference if appropriate
+		System.out.println("DIFFERENCING COMMANDS");
+		System.out.println("---------------------");
+		for(String s:map1.keySet()){
+			if(map2.containsKey(s)){
+				sCommand = "diff -y --width=200 -b " + map1.get(s) + " " + map2.get(s) + " > " + sDirOutput + "/" + s.replace(".java","") + ".differences";
+				System.out.println(sCommand);
+				runCommand(sCommand);
+			}
+		}
+		System.out.println("");
+		System.out.println("DIRECTORIES COMPARED");
+		System.out.println("--------------------");
+		System.out.println(sDir1);
+		System.out.println(sDir2);
+		System.out.println("");
+	}
+	
+	/**
+	 * Counts occurrences of each class in specified workspace directory
+	 * @param sDirWorkspace Workspace directory
+	 */
+	private static void countOccurrences(String sDirWorkspace){
+		
+		//fio1 = FileIO object
+		//lstFiles = list of files
+		//mapFiles(sClass) = returns the set of paths to the files for the given class
+		//set1 = current set of files
+		//sClass = current class
+		
+		FileIO fio1;
+		ArrayList<String> lstFiles;
+		Map<String,HashSet<String>> mapFiles;
+		HashSet<String> set1;
+		String sClass;
+		
+		//loading FileIO object and list of files
+		fio1 = new FileIO();
+		lstFiles = fio1.listAllFiles(sDirWorkspace, ".java");
+	
+		//loading map of files
+		mapFiles = new HashMap<String,HashSet<String>>();
+		for(String s:lstFiles){
+			
+			//loading current class
+			sClass = FileIO.getFileName(s);
+			
+			//initializing key if appropriate
+			if(!mapFiles.containsKey(sClass)){
+				set1 = new HashSet<String>();
+				mapFiles.put(sClass, set1);
+			}
+			
+			//updating
+			mapFiles.get(sClass).add(s);
+		}
+		
+		//looping through classes
+		System.out.println("NUMBER OF OCCURRENCES OF CLASSES");
+		System.out.println("--------------------------------");
+		for(String s:mapFiles.keySet()){
+			
+			if(s.equals("Main.java")){
+				continue;
+			}
+			
+			System.out.println(s.replace(".java","") + ":" + mapFiles.get(s).size());
+		}
+		System.out.println("");
+	}
+	
+	public static void outputDuplicates(String rgsArgs[]){
+		
+		//arg1 = arguments object
+		//fio1 = FileIO object
+		//lstFiles = list of files
+		//mapFiles(sClass) = returns the set of paths to the files for the given class
+		//set1 = current set of files
+		//sClass = current class
+		//sPathOut = current output path
+		
+		FileIO fio1;
+		Arguments arg1;
+		ArrayList<String> lstFiles;
+		Map<String,HashSet<String>> mapFiles;
+		HashSet<String> set1;
+		String sClass; String sPathOut;
+		
+		//loading arguments
+		arg1 = new Arguments(rgsArgs);
+		
+		//loading FileIO object and list of files
+		fio1 = new FileIO();
+		lstFiles = fio1.listAllFiles(arg1.getValueString("sDirWorkspace"), "Polygon.java");
+	
+		//loading map of files
+		mapFiles = new HashMap<String,HashSet<String>>();
+		for(String s:lstFiles){
+			
+			//loading current class
+			sClass = FileIO.getFileName(s);
+			
+			//initializing key if appropriate
+			if(!mapFiles.containsKey(sClass)){
+				set1 = new HashSet<String>();
+				mapFiles.put(sClass, set1);
+			}
+			
+			//updating
+			mapFiles.get(sClass).add(s);
+		}
+		
+		//looping through classes
+		for(String s:mapFiles.keySet()){
+			
+			//checking if file should be output
+			if(mapFiles.get(s).size()==1){
+				continue;
+			}
+			if(s.equals("Main.java")){
+				continue;
+			}
+			
+			//loading complete set of files
+			set1 = (HashSet<String>) mapFiles.get(s).clone();
+			
+			//looping through pairs of files
+			for(String t:mapFiles.get(s)){
+				for(String u:mapFiles.get(s)){
+					
+					//checking that not the same file
+					if(!t.equals(u)){
+					
+						//checking if files are identical, removing if they are
+						if(FileIO.areFilesIdentical(t, u)){
+							if(set1.contains(t) && set1.contains(u)){
+								set1.remove(t);
+							}
+						}
+					}
+				}
+			}
+			
+			//moving files
+			for(String t:set1){
+				
+				//building output path
+				sPathOut = t.replace(arg1.getValueString("sDirWorkspace"),"");
+				if(sPathOut.startsWith("/")){
+					sPathOut = sPathOut.replaceFirst("/", "");
+				}
+				sPathOut=sPathOut.replace("/", "_");
+				sPathOut=sPathOut.replace("_" + s, ".java");
+				sPathOut=s.replace(".java",".") + sPathOut;
+				
+				//outputting result
+				runCommand("cp " + t + " " + (arg1.getValueString("sDirOutput") + "/" + sPathOut));
+			}
+		}
+	}
+
+	private static void runCommand(String sCommand){
+		
+		Process prc1;
+	
+		try {
+			prc1 = Runtime.getRuntime().exec(sCommand);
+			try {
+				prc1.waitFor();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+	
+}

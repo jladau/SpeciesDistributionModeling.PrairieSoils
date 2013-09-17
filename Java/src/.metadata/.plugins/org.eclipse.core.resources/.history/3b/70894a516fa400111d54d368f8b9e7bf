@@ -1,0 +1,390 @@
+package edu.ucsf.sdm;
+
+import java.util.ArrayList;
+
+import javax.swing.JOptionPane;
+
+/**
+ * This project contains utilities for postprocessing maps.
+ * @author jladau
+ */
+
+
+public class Main {
+
+	public static void main(String rgsArgs[]){
+		
+		//sAnalysis = analysis type
+		
+		String sAnalysis;
+		
+		//loading analysis type
+		sAnalysis = JOptionPane.showInputDialog("Enter the type of analysis (\"merge\" for merge maps, \"histogram\" to generate histogram, \"minimum\" to generate minimal map, \"belowthreshold\" to generate proportions below threshold):");
+		
+		//running appropriate analysis
+		if(sAnalysis.equals("merge")){
+			mergeMaps();
+		}else if(sAnalysis.equals("histogram")){
+			makeHistogram();
+		}else if(sAnalysis.equals("minimum")){
+			makeMinimum();
+		}else if(sAnalysis.equals("belowthreshold")){
+			makeProportionBelowThreshold();
+		}
+		
+		//terminating
+		JOptionPane.showMessageDialog(null,"Done");
+	}
+	
+	/**
+	 * Makes map showing the minimal raster value within a set of rasters.
+	 */
+	private static void makeMinimum(){
+		
+		//sDir = directory with set of rasters to consider
+		//lstCDF = list of cdf objects to consider
+		//rgsFiles = list of files in directory
+		//cdf1 = current netCDF object
+		//cdfWriter = NetCDF writer
+		//lstElevations = list of elevations
+		//lstTimes = list of times
+		//rgdMapOut = current output map
+		
+		ArrayList<Double> lstElevations; ArrayList<Double> lstTimes; ArrayList<NetCDF_IO> lstCDF;
+		String sDir;
+		String rgsFiles[];
+		NetCDF_IO cdf1 = null; NetCDF_IO cdfWriter; 
+		double rgdMapOut[][];
+		
+		//loading list of elevations and times
+		lstElevations = new ArrayList<Double>();
+		lstTimes = new ArrayList<Double>();
+		lstElevations.add(0.);
+		for(int k=1;k<=12;k++){
+			lstTimes.add((double) k);
+		}
+		
+		//loading paths
+		sDir = FileIO.getPath("Enter the directory with the rasters:", "");
+		
+		//initializing list of cdf objects
+		lstCDF = new ArrayList<NetCDF_IO>();
+		
+		//loading list of cdf objects
+		rgsFiles = FileIO.getFileList(sDir);
+		for(int i=0;i<rgsFiles.length;i++){
+			if(rgsFiles[i].endsWith(".nc")){
+				
+				//loading current file
+				cdf1 = new NetCDF_IO(sDir + "/" + rgsFiles[i],"reading");
+				lstCDF.add(cdf1);
+			}
+		}
+		
+		//initializing writer
+		cdfWriter = new NetCDF_IO(System.getProperty("user.home") + "/MinimumMap.nc","writing");
+		cdfWriter.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, cdf1.getVariableName(), cdf1.getUnits());
+		
+		//looping through times
+		for(int k=1;k<=12;k++){
+			
+			//minimizing maps
+			rgdMapOut = NetCDF_Operations.findMinimumGrid(lstCDF, 0., (double) k);
+				
+			//saving map
+			cdfWriter.writeGrid(rgdMapOut, 0., (double) k);
+		}
+		
+		//closing writer
+		cdfWriter.closeWriter();
+	}
+	
+	/**
+	 * Makes histograms.
+	 */ 
+	private static void makeHistogram(){
+		
+		//iBins = number of bins.
+		//sDir = directory of maps to analyze
+		//sPathMapTest = path to map with data for deciding which map to use
+		//dElevation = depth to consider
+		//cdf1 = cdf object of map in use
+		//lstElevations = list of elevations
+		//lstTimes = list of times
+		//rgsFiles = list of maps to be merged
+		//rgd1 = current histogram
+		//rgdHist = current total histogram
+		//d1 = minimum for current month
+		//d2 = maximum for current month
+		//dMax = current maximum value
+		//dMin = current minimum value
+		//rgsOut = output
+		//ncf1 = NetCDF_Operations object
+		
+		ArrayList<Double> lstElevations; ArrayList<Double> lstTimes;
+		String sDir;
+		double dElevation; double dMax; double dMin; double d1; double d2;
+		double rgd1[][]; double rgdHist[][] = null;
+		NetCDF_IO cdf1; 
+		String rgsFiles[]; String rgsOut[][];
+		int iBins;
+		NetCDF_Operations ncf1;
+		
+		//loading number of bins
+		iBins = 100;
+		
+		//loading paths
+		sDir = FileIO.getPath("Enter the directory with the set of rasters for which to construct histograms:", "");
+		
+		//loading list of elevations and times
+		lstElevations = new ArrayList<Double>();
+		lstTimes = new ArrayList<Double>();
+		lstElevations.add(0.);
+		for(int k=1;k<=12;k++){
+			lstTimes.add((double) k);
+		}
+		
+		//loading depth
+		dElevation = 0;
+		
+		//loading list of files
+		rgsFiles = FileIO.getFileList(sDir);
+		
+		//initializing NetCDF_Operations object
+		ncf1 = new NetCDF_Operations();
+		
+		//looping through files
+		for(int l=0;l<rgsFiles.length;l++){
+			
+			//updating progress
+			System.out.println("Analyzing raster " + (l+1) + " of " + rgsFiles.length + "...");
+			
+			//checking file type
+			if(!rgsFiles[l].endsWith(".nc")){
+				continue;
+			}
+			
+			//initializing cdf object
+			cdf1 = new NetCDF_IO(sDir + "/" + rgsFiles[l],"reading");
+			
+			//loading minimum and maximum values
+			dMin = 1000000000000.;
+			dMax = -1000000000000.;
+			for(int k=1;k<=12;k++){
+				
+				ncf1.loadExtremes(cdf1, dElevation, (double) k);
+				
+				d1 = ncf1.getMinimum();
+				d2 = ncf1.getMaximum();
+				if(d1<dMin){
+					dMin=d1;
+				}
+				if(d2>dMax){
+					dMax=d2;
+				}
+			}
+			
+			//looping through times
+			for(int k=1;k<=12;k++){
+				
+				//loading histogram
+				rgd1 = ncf1.findHistogram(cdf1, dElevation, (double) k, dMin, dMax, (dMax-dMin)/((double) iBins));
+				
+				//initializing if necessary
+				if(k==1){
+					rgdHist = new double[rgd1.length][rgd1[0].length];
+					for(int i=0;i<rgd1.length;i++){
+						rgdHist[i][0]=rgd1[i][0];
+						rgdHist[i][1]=rgd1[i][1];
+					}
+				}
+
+				//saving histogram
+				for(int i=0;i<rgd1.length;i++){
+					rgdHist[i][2]+=rgd1[i][2];
+				}
+			}
+			
+			//saving histogram
+			rgsOut = new String[rgdHist.length+1][1];
+			rgsOut[0][0]="MIN,MAX,COUNT";
+			for(int i=0;i<rgdHist.length;i++){
+				rgsOut[i+1][0]=rgdHist[i][0] + "," + rgdHist[i][1] + "," + rgdHist[i][2];
+			}
+			FileIO.writeFile(rgsOut, System.getProperty("user.home") + "/Histogram_" + rgsFiles[l].replace(".nc", ".csv"), "", 0, false);
+			
+			//closing reader
+			cdf1.closeReader();
+		}
+	}
+	
+	/**
+	 * Merges maps.
+	 */
+	private static void mergeMaps(){
+		
+		//sDirFalse = directory of maps to use if test value is false
+		//sDirTrue = directory of maps to use if test value is true
+		//sPathMapTest = path to map with data for deciding which map to use
+		//dElevation = depth to consider
+		//rgdMapOut = current output map
+		//cdfFalse = cdf object of map to use if test value is false
+		//cdfTrue = cdf object of map to use if test value is true
+		//cdfTest = cdf object for test map
+		//cdfWriter = cdf object for writing output
+		//lstElevations = list of elevations
+		//lstTimes = list of times
+		//rgsFiles = list of maps to be merged
+		
+		ArrayList<Double> lstElevations; ArrayList<Double> lstTimes;
+		String sDirFalse; String sDirTrue; String sPathMapTest;
+		double dElevation;
+		double rgdMapOut[][];
+		NetCDF_IO cdfFalse; NetCDF_IO cdfTrue; NetCDF_IO cdfTest; NetCDF_IO cdfWriter;
+		String rgsFiles[];
+		
+		//loading paths
+		sDirFalse = FileIO.getPath("Enter the directory with the first set of maps (values from these map will be used if test condition is false):", "");
+		sDirTrue = FileIO.getPath("Enter the directory with the second set of maps (values from this map will be used if test condition is true):", "");
+		sPathMapTest = FileIO.getPath("Enter the path to the map with the data to be used as a criterion for merging:", "");
+		
+		//loading list of elevations and times
+		lstElevations = new ArrayList<Double>();
+		lstTimes = new ArrayList<Double>();
+		lstElevations.add(0.);
+		for(int k=1;k<=12;k++){
+			lstTimes.add((double) k);
+		}
+		
+		//loading depth
+		dElevation = 0;
+		
+		//loading list of files
+		rgsFiles = FileIO.getFileList(sDirFalse);
+		
+		//initializing test raster
+		cdfTest = new NetCDF_IO(sPathMapTest,"reading");
+		
+		//looping through files
+		for(int l=0;l<rgsFiles.length;l++){
+			
+			//updating progress
+			System.out.println("Analyzing raster " + (l+1) + " of " + rgsFiles.length + "...");
+			
+			//checking file type
+			if(!rgsFiles[l].endsWith(".nc")){
+				continue;
+			}
+			
+			//initializing cdf objects
+			cdfFalse = new NetCDF_IO(sDirFalse + "/" + rgsFiles[l],"reading");
+			cdfTrue = new NetCDF_IO(sDirTrue + "/" + rgsFiles[l],"reading");
+			
+			//initializing writer
+			cdfWriter = new NetCDF_IO(System.getProperty("user.home") + "/" + rgsFiles[l].replace(".nc","_Merged.nc"),"writing");
+			cdfWriter.initializeWriter(0.5, "Meters", lstElevations, "Month", lstTimes, cdfFalse.getVariableName(), cdfTrue.getUnits());
+			
+			//looping through times
+			for(int k=1;k<=12;k++){
+				
+				//merging maps
+				rgdMapOut = NetCDF_Operations.mergeGrids(cdfTest, cdfFalse, cdfTrue, (double) k, dElevation);
+					
+				//saving map
+				cdfWriter.writeGrid(rgdMapOut, dElevation, (double) k);
+			}
+			
+			//closing objects
+			cdfFalse.closeReader();
+			cdfTrue.closeReader();
+			cdfWriter.closeWriter();
+		}
+			
+		//closing test reader
+		cdfTest.closeReader();
+	}
+
+	/**
+	 * Finds proportion of area below threshold for each map
+	 */ 
+	private static void makeProportionBelowThreshold(){
+		
+		//sDir = directory of maps to analyze
+		//sPathMapTest = path to map with data for deciding which map to use
+		//dElevation = depth to consider
+		//cdf1 = cdf object of map in use
+		//lstElevations = list of elevations
+		//lstTimes = list of times
+		//rgsFiles = list of maps to be merged
+		//rgsOut = output
+		//ncf1 = NetCDF_Operations object
+		//d1 = current proportion
+		//lst1 = list of output values: sVariable,sMonth,sProportion
+		
+		ArrayList<Double> lstElevations; ArrayList<Double> lstTimes; ArrayList<String> lst1;
+		String sDir;
+		double dElevation; double d1;
+		NetCDF_IO cdf1; 
+		String rgsFiles[]; String rgsOut[][];
+		NetCDF_Operations ncf1;
+		
+		//loading paths
+		sDir = FileIO.getPath("Enter the directory with the set of rasters:", "");
+		
+		//loading list of elevations and times
+		lstElevations = new ArrayList<Double>();
+		lstTimes = new ArrayList<Double>();
+		lstElevations.add(0.);
+		for(int k=1;k<=12;k++){
+			lstTimes.add((double) k);
+		}
+		
+		//loading depth
+		dElevation = 0;
+		
+		//loading list of files
+		rgsFiles = FileIO.getFileList(sDir);
+		
+		//initializing NetCDF_Operations object
+		ncf1 = new NetCDF_Operations();
+		
+		//initializing output list
+		lst1 = new ArrayList<String>();
+		
+		//looping through files
+		for(int l=0;l<rgsFiles.length;l++){
+			
+			//updating progress
+			System.out.println("Analyzing raster " + (l+1) + " of " + rgsFiles.length + "...");
+			
+			//checking file type
+			if(!rgsFiles[l].endsWith(".nc")){
+				continue;
+			}
+			
+			//initializing cdf object
+			cdf1 = new NetCDF_IO(sDir + "/" + rgsFiles[l],"reading");
+			
+			//looping through times
+			for(int k=1;k<=12;k++){
+				
+				//loading proportion and saving
+				d1 = ncf1.findProportionBelowThreshold(cdf1, dElevation, (double) k, -10.);
+				lst1.add(rgsFiles[l].replace(".nc","") + "," + k + "," + d1);
+			}
+			
+			//closing reader
+			cdf1.closeReader();
+		}
+		
+		//outputting results
+		rgsOut = new String[lst1.size()+1][1];
+		rgsOut[0][0] = "VARIABLE,MONTH,PROPORTION_OF_AREA_BELOW_THRESHOLD";
+		for(int i=0;i<lst1.size();i++){
+			rgsOut[i+1][0]=lst1.get(i);
+		}
+		
+		//printing results
+		FileIO.writeFile(rgsOut, System.getProperty("user.home") + "/ProportionBelowThreshold.csv", "", 0, false);
+	}
+}

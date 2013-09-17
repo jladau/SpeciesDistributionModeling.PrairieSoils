@@ -1,0 +1,217 @@
+package edu.ucsf.sdm;
+
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Object for running model selection.
+ * @author jladau
+ */
+
+public class SelectModel {
+
+	//mapBestModelPRESS(iVars) = returns the best model (model with lowest PRESS) with given number of variables
+	//mapBestModelPRESS(iVars) = returns the best model (model with lowest BIC) with given number of variables
+	//mapPRESS(sModel) = returns the press value of given model
+	//mapBIC(sModel) = returns the BIC for the given model
+	//mapAIC(sModel) = returns the AIC for the given model
+	
+	private Map<Integer,String> mapBestModelPRESS;
+	private Map<Integer,String> mapBestModelBIC;
+	private Map<String,Double> mapPRESS;
+	private Map<String,Double> mapBIC;
+	private Map<String,Double> mapAIC;
+	
+	/**
+	 * Constructor.
+	 * @param rgsData Data file
+	 * @param iMaxVars Maximum number of variables to consider
+	 * @param sResponse Response variable name.
+	 * @param rgsVars List of candidate covariates
+	 */
+	public SelectModel(String rgsData[][], int iMaxVars, String sResponse, String rgsVars[]){
+		
+		//flm1 = FitLM_R object
+		//sblLM = current LM call
+		//rgi1 = indices of variables currently being considered
+		//cmb1 = current CombinatoricAlgorithms object
+		//dPRESS = current press value
+		//dPRESSMin = minimum PRESS value for current number of variables
+		//dBIC = current BIC value
+		//dBICMin = minimum BIC for current number of variables
+		//dBIC = current AIC value
+		
+		FitLM_R flm1;
+		StringBuilder sblLM;
+		int rgi1[];
+		CombinatoricAlgorithms cmb1;
+		double dPRESS; double dPRESSMin; double dBIC; double dBICMin; double dAIC;
+		
+		//initializing FirLM_R object
+		flm1 = new FitLM_R();
+		
+		//initializing maps
+		mapBestModelPRESS = new HashMap<Integer,String>();
+		mapBestModelBIC = new HashMap<Integer,String>();
+		mapPRESS = new HashMap<String,Double>();
+		mapBIC = new HashMap<String,Double>();
+		mapAIC = new HashMap<String,Double>();
+		
+		//initializing stringbuilder object
+		sblLM = new StringBuilder();
+		
+		//loading intercept only model
+		sblLM.append("lm(" + sResponse + "~1)");
+		flm1.fitModel(rgsData, sblLM.toString());
+		mapBestModelPRESS.put(0, sblLM.toString());
+		mapPRESS.put(sblLM.toString(),flm1.getPRESS());
+		mapBestModelBIC.put(0, sblLM.toString());
+		mapBIC.put(sblLM.toString(), flm1.getBIC());
+		mapAIC.put(sblLM.toString(), flm1.getAIC());
+		
+		//looping through numbers of variables
+		for(int k=1;k<=iMaxVars;k++){
+			
+			//updating progress
+			System.out.println("Analyzing models with " + k + " parameters...");
+			
+			//initializing combinatoric algorithms object
+			cmb1 = new CombinatoricAlgorithms();
+			
+			//initializing minimum press value
+			dPRESSMin = 99999999999999999999999.;
+			dBICMin = 99999999999999999999999.;
+			
+			//loading first subset
+			rgi1 = cmb1.NEXKSB(rgsVars.length, k);
+			
+			//looping through subsets
+			do{
+				
+				//loading lm call
+				sblLM = new StringBuilder();
+				sblLM.append("lm(" + sResponse + "~");
+				for(int i=0;i<rgi1.length;i++){
+					sblLM.append(rgsVars[rgi1[i]-1]);
+					if(i<rgi1.length-1){
+						sblLM.append("+");
+					}
+				}
+				sblLM.append(")");
+				
+				//fitting model
+				flm1.fitModel(rgsData, sblLM.toString());
+				
+				//saving PRESS, BIC, and AIC value if appropriate
+				dPRESS = flm1.getPRESS();
+				dBIC = flm1.getBIC();
+				dAIC = flm1.getAIC();
+				if(dPRESS<dPRESSMin){
+					mapBestModelPRESS.put(k, sblLM.toString());
+					mapPRESS.put(sblLM.toString(), dPRESS);
+					dPRESSMin = dPRESS;
+					mapBIC.put(sblLM.toString(), dBIC);
+					mapAIC.put(sblLM.toString(), dAIC);
+				}
+				if(dBIC<dBIC){
+					mapBestModelBIC.put(k,sblLM.toString());
+					mapBIC.put(sblLM.toString(), dBIC);
+					mapAIC.put(sblLM.toString(), dAIC);
+					dBICMin = dBIC;
+					mapPRESS.put(sblLM.toString(), dPRESS);
+				}
+				
+				//loading next subset
+				rgi1 = cmb1.NEXKSB(rgsVars.length, k);
+			}while(rgi1[0]!=-9999);
+		}
+		
+		//terminating r connection
+		flm1.closeR();
+		
+	}
+	
+	/**
+	 * Returns the best model (PRESS) with the given number of covariates.
+	 * @param iCovariates Number of covariates.
+	 * @return Model
+	 */
+	public String getBestModelPRESS(int iCovariates){
+		
+		if(!mapBestModelPRESS.containsKey(iCovariates)){
+			return "-9999";
+		}else{
+			return mapBestModelPRESS.get(iCovariates);
+		}
+	}
+	
+	/**
+	 * Returns PRESS for given model
+	 * @param sModel model of interest
+	 * @return PRESS value
+	 */
+	public double getPRESS(String sModel){
+		
+		if(!mapPRESS.containsKey(sModel)){
+			return -9999;
+		}else{
+			return mapPRESS.get(sModel);
+		}
+	}
+	
+	/**
+	 * Returns the best model (BIC) with the given number of covariates.
+	 * @param iCovariates Number of covariates.
+	 * @return Model
+	 */
+	public String getBestModelBIC(int iCovariates){
+		
+		if(!mapBestModelBIC.containsKey(iCovariates)){
+			return "-9999";
+		}else{
+			return mapBestModelBIC.get(iCovariates);
+		}
+	}
+	
+	/**
+	 * Returns BIC for given model
+	 * @param sModel model of interest
+	 * @return BIC value
+	 */
+	public double getBIC(String sModel){
+		
+		if(!mapBIC.containsKey(sModel)){
+			return -9999;
+		}else{
+			return mapBIC.get(sModel);
+		}
+	}
+	
+	/**
+	 * Returns the best model (AIC) with the given number of covariates.
+	 * @param iCovariates Number of covariates.
+	 * @return Model
+	 */
+	public String getBestModelAIC(int iCovariates){
+		
+		if(!mapBestModelBIC.containsKey(iCovariates)){
+			return "-9999";
+		}else{
+			return mapBestModelBIC.get(iCovariates);
+		}
+	}
+	
+	/**
+	 * Returns AIC for given model
+	 * @param sModel model of interest
+	 * @return AIC value
+	 */
+	public double getAIC(String sModel){
+		
+		if(!mapAIC.containsKey(sModel)){
+			return -9999;
+		}else{
+			return mapAIC.get(sModel);
+		}
+	}
+}

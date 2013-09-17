@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/CompileObservations/src/edu/ucsf/sdm/Main.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.debug.ui.ATTR_CAPTURE_IN_FILE" value="/home/jladau/Desktop/Eclipse.out"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ucsf.sdm.Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="--sAnalysisMode=alpha-diversity&#10;--sTaxonInclude=all&#10;--sPathMetadata=/home/jladau/Documents/Research/Data/Microbial Community Samples/North American Soils LTER Community Samples Metadata.csv&#10;--sPathSamples=/home/jladau/Documents/Research/Data/Microbial Community Samples/North American Soils LTER Community Samples.csv&#10;--sRasterDir=/home/jladau/Documents/Research/Data/Rasters/Terrestrial and Global Environmental Variables&#10;--sPathFilters=/home/jladau/Documents/Research/Java/Settings/SDM Filters/North American Soils LTER Filters.txt&#10;--iRarefactionIterations=1&#10;--iTotalReads=4000&#10;--sOutputPath=/home/jladau/Desktop/temp.data"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="CompileObservations"/>
+</launchConfiguration>

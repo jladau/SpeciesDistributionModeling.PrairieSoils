@@ -1,0 +1,122 @@
+package edu.ucsf.sdm;
+
+/**
+ * This class implements leave-one-out cross validation for a specified model and training data set.
+ * @author jladau
+ */
+
+public class IndependentlyValidateModel {
+
+	//rgsVarShort = list of short variable names (from header of data file)
+	//rgsObsPred = each row gives an observed value and the prediction for that value if it left out of the model in fitting; first line is header
+	
+	private String rgsVarShort[];
+	private String rgsObsPred[][];
+	
+	/**
+	 * Constructor for lm.
+	 * @param lm1 Initialized FitLM_R object.
+	 * @param rgsData Data.  Columns contain a variables.
+	 * @param rgsDataTest Test data for validation
+	 * @param sLM LM call
+	 */
+	public IndependentlyValidateModel(FitLM_R lm1, String rgsData[][], String rgsDataTest[][], int iResponse, String sResponseTransform, String sLM){
+		
+		//sPredictorValues = current predictor values (omitted observation)
+		//dPrediction = current prediction
+		
+		String sPredictorValues;
+		double dPrediction;
+		
+		//loading short variable names
+		loadShortVars(rgsData);
+		
+		//initializing output
+		rgsObsPred = new String[rgsDataTest.length][2];
+		rgsObsPred[0][0] = "OBSERVED_VALUE"; rgsObsPred[0][1] = "PREDICTION";
+		
+		//loading short variable names
+		loadShortVars(rgsDataTest);
+		
+		//fitting model
+		lm1.fitModel(rgsData, sLM);
+		
+		//looping through observations and removing one at a time
+		for(int i=1;i<rgsDataTest.length;i++){
+
+			//updating progress
+			System.out.println("Iteration " + i + " of " + rgsDataTest.length + "...");
+			
+			//loading current predictor values
+			sPredictorValues = getPredictor(rgsDataTest, i);
+		
+			//loading current prediction
+			lm1.appendPredictorValues(sPredictorValues);
+			
+			//loading current prediction
+			lm1.loadPredictions(sResponseTransform);
+			dPrediction = lm1.getPredictions()[0];
+		
+			//outputting results
+			rgsObsPred[i][0] = rgsDataTest[i][iResponse];
+			rgsObsPred[i][1] = Double.toString(dPrediction);
+			
+			//clearing predictors
+			lm1.clearPredictorValues();
+		}
+	}
+	
+	/**
+	 * Gets list of predictions when each observation is omitted.
+	 * @return Matrix: first column gives observed value, second column gives predicted value when observation is omitted.
+	 */
+	public String[][] getPredictions(){
+		return rgsObsPred;
+	}
+
+	/**
+	 * Loads predictor string for current observation that was omitted.
+	 * @param rgsData Data matrix.
+	 * @param iRow Row from which observation is to be taken.
+	 * @return Predictor in string format.
+	 */
+	private String getPredictor(String rgsData[][], int iRow){
+		
+		//sbl1 = output stringbuilder object
+		
+		StringBuilder sbl1;
+		
+		//initializing stringbuilder
+		sbl1 = new StringBuilder();
+		
+		//looping through observations
+		for(int j=0;j<rgsData[0].length;j++){
+			
+			//updating string
+			sbl1.append(rgsVarShort[j] + ":"  + rgsData[iRow][j]);
+			
+			//terminating string appropriately
+			if(j<rgsData[0].length-1){
+				sbl1.append(",");
+			}
+		}
+		
+		//outputting result
+		return sbl1.toString();
+	}
+	
+	/**
+	 * Loads matrix of short variable names
+	 * @param rgsData Data set.  Short variable names are assumed to be in the first row.
+	 */
+	private void loadShortVars(String rgsData[][]){
+		
+		//initializing short name array
+		rgsVarShort = new String[rgsData[0].length];
+		
+		//adding names
+		for(int j=0;j<rgsData[0].length;j++){
+			rgsVarShort[j] = rgsData[0][j].split(":")[0];
+		}	
+	}
+}

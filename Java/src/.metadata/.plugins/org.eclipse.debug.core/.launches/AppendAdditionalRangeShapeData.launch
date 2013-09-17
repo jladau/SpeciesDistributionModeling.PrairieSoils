@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/AppendAdditionalRangeShapeData/src/edu/ucsf/ranges/Main.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.ucsf.ranges.Main"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="--sPostProcessedResultsPath=/home/jladau/Desktop/Beta-Diversity Range Shapes Project/Manuscript/Figures/Source Data/PostProcessResults_Land_Output.csv&#10;--sOutputDir=/home/jladau/Desktop&#10;--sAmphibiansTurnoverOutputPath=/home/jladau/Desktop/Beta-Diversity Range Shapes Project/Manuscript/Figures/Source Data/Amphibians_Nonoverlapping_TurnoverOutput_5Degree_250000SamplingArea.csv&#10;--sBirdsTurnoverOutputPath=/home/jladau/Desktop/Beta-Diversity Range Shapes Project/Manuscript/Figures/Source Data/Birds_Nonoverlapping_TurnoverOutput_5Degree_250000SamplingArea.csv&#10;--sMammalsTurnoverOutputPath=/home/jladau/Desktop/Beta-Diversity Range Shapes Project/Manuscript/Figures/Source Data/Mammals_Nonoverlapping_TurnoverOutput_5Degree_250000SamplingArea.csv&#10;--sAmphibiansSmoothedRangesPath=/home/jladau/Documents/Research/Data/Smoothed IUCN Ranges/Amphibians_50.0_SMOOTH.csv&#10;--sBirdsSmoothedRangesPath=/home/jladau/Documents/Research/Data/Smoothed IUCN Ranges/Birds_50.0_SMOOTH.csv&#10;--sMammalsSmoothedRangesPath=/home/jladau/Documents/Research/Data/Smoothed IUCN Ranges/Mammals_50.0_SMOOTH.csv&#10;--iTaskID=-9999&#10;--iTotalTasks=500"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="AppendAdditionalRangeShapeData"/>
+</launchConfiguration>
