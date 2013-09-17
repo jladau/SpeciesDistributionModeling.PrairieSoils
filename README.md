@@ -16,11 +16,19 @@ The computationally expensive step in the analysis is running the all-subsets mo
 A description of the files is as follows:
 
 'Bash/SpeciesDistributionModeling.PRAIRIE.SingleThread.sh': Bash script for running the analysis.
+
 'Java/Binaries':  Compiled Java jar files for running doing the computational parts of the analysis.  These jar files are called by the aforementioned bash script.
+
 'Java/External_Libraries': Contains third party libraries necessary for the analysis.
+
 'Java/src': Contains Java source files.
+
 'Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples.csv':  OTU table in flat format for the sampled locations.
+
 'Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples_Metadata.csv':  Metadata for the sampled locations.
+
 'Data/Filters/Prairie_Soil_Filters.txt':  Filters for removing unused samples (none implemented).
+
 'Data/Original_Tallgrass_Prairie_Extent_MapTallgrassPrairie_Above31N.shp.txt':  Map of the original extent of the tallgrass prairie.
+
 'Data/Rasters': Contains a subset of the rasters that were used as candidates in the analysis.  The ones that are included are those that were found to be important predictors.  Rasters are in NetCDF format (http://www.unidata.ucar.edu/software/netcdf).
