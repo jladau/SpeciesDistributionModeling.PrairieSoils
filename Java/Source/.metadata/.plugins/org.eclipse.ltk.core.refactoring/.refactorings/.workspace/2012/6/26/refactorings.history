@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">&#x0A;<refactoring comment="Delete resource &apos;SummarizeMaps&apos;" deleteContents="true" description="Delete resource &apos;SummarizeMaps&apos;" element1="/SummarizeMaps" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1340658738831"/>&#x0A;<refactoring comment="Delete resource &apos;IndependentlyValidateModel&apos;" deleteContents="true" description="Delete resource &apos;IndependentlyValidateModel&apos;" element1="/IndependentlyValidateModel" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1340659378356"/>
-</session>

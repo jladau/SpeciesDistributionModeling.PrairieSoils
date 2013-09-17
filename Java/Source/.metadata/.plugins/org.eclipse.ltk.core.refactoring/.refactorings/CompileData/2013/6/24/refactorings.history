@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Copy element &apos;&apos; to &apos;edu.ucsf.sdm.Main.main(...)&apos;&#x0A;- Original project: &apos;CompileData&apos;&#x0A;- Destination element: &apos;edu.ucsf.sdm.Main.main(...)&apos;&#x0A;- Original element: &apos;edu.ucsf.sdm.Main.main(...)&apos;" description="Copy method" destination="/src&lt;edu.ucsf.sdm{Main.java[Main~main~\[QString;" element1="/src&lt;edu.ucsf.sdm{Main.java[Main~main~\[QString;" flags="589830" id="org.eclipse.jdt.ui.copy" members="1" policy="org.eclipse.jdt.ui.copyMembers" stamp="1371057810852" version="1.0"/>
-</session>
