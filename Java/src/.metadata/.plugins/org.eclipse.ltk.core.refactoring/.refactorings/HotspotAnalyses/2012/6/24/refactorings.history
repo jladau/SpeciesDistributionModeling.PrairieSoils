@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename package &apos;src.edu.ucsf.sdm&apos; to &apos;edu.ucsf.sdm&apos;&#x0A;- Original project: &apos;HotspotAnalyses&apos;&#x0A;- Original element: &apos;HotspotAnalyses/src/src.edu.ucsf.sdm&apos;&#x0A;- Renamed element: &apos;HotspotAnalyses/src/edu.ucsf.sdm&apos;&#x0A;- Update references to refactored element&#x0A;- Update textual occurrences in comments and strings" description="Rename package &apos;src.edu.ucsf.sdm&apos;" flags="589830" hierarchical="false" id="org.eclipse.jdt.ui.rename.package" input="/src&lt;src.edu.ucsf.sdm" name="edu.ucsf.sdm" qualified="false" references="true" stamp="1339710287264" textual="false" version="1.0"/>
-</session>

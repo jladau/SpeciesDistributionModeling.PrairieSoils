@@ -1,20 +1,25 @@
 #!/bin/bash
 
-sOutDir=$1/Output
 
-sPathFilters=$1/Data/Filters/Prairie_Soil_Filters.txt
+BASHDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-sJavaPath=$1/Java/Binaries
+DIR="$(dirname "$BASHDIR")"
 
-sRasterDir=$1/Data/Rasters
+sOutDir=$DIR/Output
 
-sPathMask=$1/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
+sPathFilters=$DIR/Data/Filters/Prairie_Soil_Filters.txt
 
-sGlobalTopographyPath=$1/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
+sJavaPath=$DIR/Java/target
 
-sPathMetadata=$1/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples_Metadata.csv
+sRasterDir=$DIR/Data/Rasters
 
-sPathSamples=$1/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples.csv
+sPathMask=$DIR/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
+
+sGlobalTopographyPath=$DIR/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
+
+sPathMetadata=$DIR/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples_Metadata.csv
+
+sPathSamples=$DIR/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples.csv
 
 iTotalReads=940
 
@@ -48,7 +53,7 @@ do
 	sResponseVar=${rgsResponseVar[i]}
 
 	#making output directory	
-	mkdir $sOutDir/$sTaxon.$sResponseVar
+	mkdir -p $sOutDir/$sTaxon.$sResponseVar
 
 	#loading data path
 	sDataPath=$sOutDir/$sTaxon.$sResponseVar/$sTaxon.$sResponseVar.alpha.data	
@@ -56,27 +61,27 @@ do
 	echo here
 
 	#compiling data
-	java -jar $sJavaPath/CompileObservations.jar --sAnalysisMode=$sAnalysisMode --sTaxonInclude=${rgsTaxon[i]} --sPathMetadata=$sPathMetadata --sPathSamples=$sPathSamples --sRasterDir=$sRasterDir --sPathFilters=$sPathFilters --iRarefactionIterations=1 --iTotalReads=$iTotalReads --sOutputPath=$sDataPath
+	java -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.CompileObservationsMain --sAnalysisMode=$sAnalysisMode --sTaxonInclude=${rgsTaxon[i]} --sPathMetadata=$sPathMetadata --sPathSamples=$sPathSamples --sRasterDir=$sRasterDir --sPathFilters=$sPathFilters --iRarefactionIterations=1 --iTotalReads=$iTotalReads --sOutputPath=$sDataPath
 
 	echo there
 
 	#analyzing sample coverage
-	java -jar $sJavaPath/AnalyzeSampleCoverage.jar --sAnalysisMode=$sAnalysisMode --sRasterDir=$sRasterDir --sGlobalTopographyPath=$sGlobalTopographyPath --sLocation=terrestrial --bMESSPlots=false --sPredictorValues=$sPredictorValues --sDataPath=$sDataPath --sPredictors=$sPredictors
+	java -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.AnalyzeSampleCoverageMain --sAnalysisMode=$sAnalysisMode --sRasterDir=$sRasterDir --sGlobalTopographyPath=$sGlobalTopographyPath --sLocation=terrestrial --bMESSPlots=false --sPredictorValues=$sPredictorValues --sDataPath=$sDataPath --sPredictors=$sPredictors
 
 	#selecting model
 	for j in {0..10}
 	do
-		java -Xmx4g -jar $sJavaPath/SelectModel.jar --sAnalysisMode=alpha-diversity --iTotalTasks=$iTotalTasks --iTaskID=$j --sDataPath=$sDataPath --sResponseVariable=$sResponseVar --iMaximumCovariates=$iMaxCovariates --dMESSCutoff=0.05
+		java -Xmx4g -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.SelectModelMain --sAnalysisMode=alpha-diversity --iTotalTasks=$iTotalTasks --iTaskID=$j --sDataPath=$sDataPath --sResponseVariable=$sResponseVar --iMaximumCovariates=$iMaxCovariates --dMESSCutoff=0.05
 	done
 
 	#merging select model output
-	java -jar $sJavaPath/MergeSelectModelOutput.jar --iTotalTasks=$iTotalTasks --sDataPath=$sDataPath
+	java -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.MergeSelectModelOutputMain --iTotalTasks=$iTotalTasks --sDataPath=$sDataPath
 
 	#drawing map and running validation
-	java -jar $sJavaPath/DrawMap.jar --sAnalysisMode=$sAnalysisMode --sRasterDir=$sRasterDir --sResponseTransform=identity --sPredictorValues=$sPredictorValues --iTaskID=-9999 --iTotalTasks=-9999 --bPrintCrossValidation=true --sDataPath=$sDataPath
+	java -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.DrawMapMain --sAnalysisMode=$sAnalysisMode --sRasterDir=$sRasterDir --sResponseTransform=identity --sPredictorValues=$sPredictorValues --iTaskID=-9999 --iTotalTasks=-9999 --bPrintCrossValidation=true --sDataPath=$sDataPath
 
 	#masking and interpolating map
-	java -jar $sJavaPath/MaskAndInterpolateMap.jar --dResolution=0.1 --sPathMask=$sPathMask --sDataPath=$sDataPath
+	java -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.MaskAndInterpolateMapMain --dResolution=0.1 --sPathMask=$sPathMask --sDataPath=$sDataPath
 
 	#deleting completion files
 	cd $sOutDir/$sTaxon.$sResponseVar
@@ -84,5 +89,5 @@ do
 done
 
 #summarizing results
-java -jar $sJavaPath/SummarizeResults.jar --sIODir=$sOutDir
+java -cp $sJavaPath/nicheMapper-1.0.jar edu.ucsf.sdm.SummarizeResultsMain --sIODir=$sOutDir
 

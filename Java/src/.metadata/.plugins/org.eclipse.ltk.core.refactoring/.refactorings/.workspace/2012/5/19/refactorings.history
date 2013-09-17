@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename Java project &apos;Copy of CompileObservationsAlpha&apos; to &apos;AppendRasterValues&apos;&#x0A;- Original element: &apos;Copy of CompileObservationsAlpha&apos;&#x0A;- Renamed element: &apos;Copy of CompileObservationsAlpha&apos;&#x0A;- Update references to refactored element" description="Rename Java project &apos;Copy of CompileObservationsAlpha&apos;" flags="7" id="org.eclipse.jdt.ui.rename.java.project" input="=Copy of CompileObservationsAlpha" name="AppendRasterValues" references="true" stamp="1336262853738" version="1.0"/>
-</session>

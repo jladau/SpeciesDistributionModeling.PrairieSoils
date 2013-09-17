@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Copy element &apos;RarefySamples.java&apos; to &apos;CompileObservations/src/edu.ucsf.sdm&apos;&#x0A;- Original project: &apos;CompileObservationsBetaDiversity&apos;&#x0A;- Destination element: &apos;CompileObservations/src/edu.ucsf.sdm&apos;&#x0A;- Original element: &apos;edu.ucsf.sdm.RarefySamples.java&apos;" description="Copy compilation unit" destination="=CompileObservations/src&lt;edu.ucsf.sdm" element1="/src&lt;edu.ucsf.sdm{RarefySamples.java" files="0" flags="589830" folders="0" id="org.eclipse.jdt.ui.copy" policy="org.eclipse.jdt.ui.copyResources" stamp="1364928794901" units="1" version="1.0"/>
-</session>

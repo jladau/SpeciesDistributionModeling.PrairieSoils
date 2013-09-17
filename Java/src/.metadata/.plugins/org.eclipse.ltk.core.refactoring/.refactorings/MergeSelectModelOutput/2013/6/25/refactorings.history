@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring accessors="true" comment="Delete element from project &apos;MergeSelectModelOutput&apos;&#x0A;- Original project: &apos;MergeSelectModelOutput&apos;&#x0A;- Original element: &apos;edu.ucsf.sdm.Main.main1(...)&apos;" description="Delete element" element1="/src&lt;edu.ucsf.sdm{Main.java[Main~main1~\[QString;" elements="1" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1371344725855" subPackages="false" version="1.0"/>
-</session>
