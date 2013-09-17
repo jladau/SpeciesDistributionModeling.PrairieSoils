@@ -1,20 +1,20 @@
 #!/bin/bash
 
-sOutDir=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Output
+sOutDir=$1/Output
 
-sPathFilters=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Data/Filters/Prairie_Soil_Filters.txt
+sPathFilters=$1/Data/Filters/Prairie_Soil_Filters.txt
 
-sJavaPath=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Java/Binaries
+sJavaPath=$1/Java/Binaries
 
-sRasterDir=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Data/Rasters
+sRasterDir=$1/Data/Rasters
 
-sPathMask=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
+sPathMask=$1/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
 
-sGlobalTopographyPath=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
+sGlobalTopographyPath=$1/Data/Original_Tallgrass_Prairie_Extent_Map/TallgrassPrairie_Above31N.shp.txt
 
-sPathMetadata=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples_Metadata.csv
+sPathMetadata=$1/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples_Metadata.csv
 
-sPathSamples=/home/jladau/Desktop/PrairieSpeciesDistributionModeling/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples.csv
+sPathSamples=$1/Data/Community_Samples/Tallgrass_Prairie_Soils_Community_Samples.csv
 
 iTotalReads=940
 
